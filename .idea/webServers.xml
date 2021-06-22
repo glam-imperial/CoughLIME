@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="4ccea92d-75af-4bb6-93f3-9688c0a445e1" name="test">
+        <fileTransfer accessType="SFTP" host="batch1.doc.ic.ac.uk" port="22" sshConfigId="5d0046a1-629a-4fc1-bdbf-17315050a130" sshConfig="cider-remote">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
