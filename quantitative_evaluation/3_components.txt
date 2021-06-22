@@ -1,5 +1,0 @@
-Number samples: 1040
-Number true explanations: 863
-Number true random predictions: 772
-Percentage of true explanations: 0.8298076923076924
-Percentage of random true predictions: 0.7423076923076923
