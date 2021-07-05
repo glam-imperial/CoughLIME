@@ -2,3 +2,6 @@ test.py
 __pycache__/*
 quantitative_evaluation/*
 lime-master/*
+*.png
+spectral_tests/*
+
