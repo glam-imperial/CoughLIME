@@ -2,7 +2,7 @@ import numpy as np
 import librosa
 
 
-class TemporalSegmentation(object):
+class SpectralSegmentation(object):
     def __init__(self, audio, sample_rate, num_segments, segmentation_type='mel_spectrogram'):
         """audio:np array of shape (n,) -> mono audio
         """
