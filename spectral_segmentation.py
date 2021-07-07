@@ -49,7 +49,7 @@ class SpectralSegmentation(object):
         if len(mask) != self.num_segments:
             print('Error: mask has incorrect length')
         mask = np.array(mask)
-        combined_spec = sum(self.num_segments[mask, :, :])
+        combined_spec = np.sum(self.segments[mask, :, :], axis=0)
         reconstructed_audio = librosa.feature.inverse.mel_to_audio(combined_spec, sr=self.sample_rate)
         return reconstructed_audio
 

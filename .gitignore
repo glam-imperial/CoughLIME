@@ -1,7 +1,6 @@
-test.py
+tests_components/test.py
 __pycache__/*
 quantitative_evaluation/*
 lime-master/*
-*.png
 spectral_tests/*
-
+old_eval/*

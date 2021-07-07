@@ -15,11 +15,11 @@ def compute_mfcc(s, config):
 
     features = np.array(mfcc)
     if config['mfcc']['add_deltas'] in ['True', 'true', 'TRUE', '1']:
-        deltas = librosa.feature.delta(F)
+        deltas = librosa.feature.delta(mfcc)
         features = np.concatenate((features, deltas), axis=0)
 
     if config['mfcc']['add_delta_deltas'] in ['True', '∞true', 'TRUE', '1']:
-        ddeltas = librosa.feature.delta(F, order=2)
+        ddeltas = librosa.feature.delta(mfcc, order=2)
         features = np.concatenate((features, ddeltas), axis=0)
 
     return features
@@ -41,9 +41,9 @@ def predict(input_audio):
     rf_model = pickle.load(file_model)
 
     for i, audio in enumerate(input_audio):
-        F = compute_mfcc(audio.flatten('F'), config)
+        mfcc = compute_mfcc(audio, config)
 
-        score = rf_model.validate([F.T])
+        score = rf_model.validate([mfcc.T])
         score = np.mean(score[0], axis=0)[1]
         labels[i, 0] = score
     return labels
