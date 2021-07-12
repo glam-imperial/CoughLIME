@@ -18,7 +18,7 @@ def get_explanation(audio, sample_rate, total_components):
     explanation = explainer.explain_instance(segmentation=factorization,
                                              classifier_fn=predict_dicova.predict,
                                              labels=[0],
-                                             num_samples=64,
+                                             num_samples=16,
                                              batch_size=16,
                                              )
     return explanation, factorization
@@ -154,19 +154,20 @@ def test_single_file():
     audio_path = '/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release/AUDIO/AtACyGlV_cough.flac'
     predicted_entire = predict_dicova.predict_single_audio(audio_path)
     # TODO: adapt
-    fs = librosa.get_samplerate(audio_path)
-    audio, _ = librosa.load(audio_path, sr=fs)
+    audio, fs = librosa.load(audio_path)
     total_components = 7
     explanation, factorization = get_explanation(audio, fs, total_components)
     filename = '1_test12344'
     save_mix(explanation, 3, filename, factorization, fs, gen_random=False)
-    path_name = f"./test/{filename[:-5]}_e.wav"
+    path_name = f"./quantitative_evaluation/3_components/explanations/{filename[:-5]}_e.wav"
     prediction_exp = predict_dicova.predict_single_audio(path_name)
     print(predicted_entire)
     print(prediction_exp)
     figure = explanation.as_pyplot_figure()
     figure.show()
     figure.savefig('./explanation.png')
+    explanation.show_image_mask_spectrogram(0, positive_only=True, negative_only=False, hide_rest=True, num_features=5, min_weight=0., save_path='./tests_components/test1.png')
+    explanation.show_image_mask_spectrogram(0, positive_only=False, negative_only=False, hide_rest=False, num_features=5, min_weight=0., save_path='./tests_components/test2.png')
 
 
 def perform_quantitative_analysis():

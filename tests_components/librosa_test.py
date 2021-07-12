@@ -34,13 +34,16 @@ def test_spectral_decomposition():
     audio, sample_rate = librosa.load(audio_path)
     n_mels = 128
     spec = librosa.feature.melspectrogram(y=audio, sr=sample_rate, n_mels=n_mels)
+    librosa.display.specshow(spec, sr=sample_rate, x_axis='time', y_axis='mel')
+    plt.colorbar(format='%+2.0f dB')
+    plt.show()
     print(np.shape(spec))
     for i in range(8):
         spectrogram = np.zeros(np.shape(spec))
         spectrogram[i*16:(i+1)*16, :] = spec[i*16:(i+1)*16, :]
         reconstructed_audio = librosa.feature.inverse.mel_to_audio(spectrogram, sr=sample_rate)
-        path_write = f"./spectral_tests/{filename[:-5]}_{n_mels}_{i}.wav"
-        soundfile.write(path_write, reconstructed_audio, sample_rate)
+        #path_write = f"./spectral_tests/{filename[:-5]}_{n_mels}_{i}.wav"
+        #soundfile.write(path_write, reconstructed_audio, sample_rate)
         spec_db = librosa.power_to_db(spectrogram, ref=np.max)
         librosa.display.specshow(spec_db, sr=sample_rate, x_axis='time', y_axis='mel')
         plt.colorbar(format='%+2.0f dB')

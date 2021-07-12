@@ -7,6 +7,9 @@ import numpy as np
 import sklearn
 from sklearn.utils import check_random_state
 from tqdm.auto import tqdm
+import librosa
+import matplotlib.pyplot as plt
+from skimage.segmentation import mark_boundaries
 
 
 from lime import lime_base
@@ -69,6 +72,84 @@ class CoughExplanation(object):
         if return_indeces:
             return audio, used_features
         return audio
+
+    def show_image_mask_spectrogram(self, label, positive_only=True, negative_only=False, hide_rest=True, num_features=5, min_weight=0., save_path=None):
+        """Init function.
+
+        Args:
+            label: label to explain
+            positive_only: if True, only take superpixels that positively contribute to
+                the prediction of the label.
+            negative_only: if True, only take superpixels that negatively contribute to
+                the prediction of the label. If false, and so is positive_only, then both
+                negativey and positively contributions will be taken.
+                Both can't be True at the same time
+            hide_rest: if True, make the non-explanation part of the return
+                image gray
+            num_features: number of superpixels to include in explanation
+            min_weight: minimum weight of the superpixels to include in explanation
+
+        Returns:
+            (image, mask), where image is a 3d numpy array and mask is a 2d
+            numpy array that can be used with
+            skimage.segmentation.mark_boundaries
+        """
+        if label not in self.local_exp:
+            raise KeyError('Label not in explanation')
+        if positive_only and negative_only:
+            raise ValueError("Positive_only and negative_only cannot be true at the same time.")
+        segmentation = self.segmentation
+        explanation = self.local_exp[label]
+
+        if positive_only:
+            indices_comp = [x[0] for x in explanation
+                  if x[1] > 0 and x[1] > min_weight][:num_features]
+            mask = segmentation.return_mask_boundaries(indices_comp, [])
+        if negative_only:
+            indices_comp = [x[0] for x in explanation
+                  if x[1] < 0 and abs(x[1]) > min_weight][:num_features]
+            mask = segmentation.return_mask_boundaries([], indices_comp)
+        if positive_only or negative_only:
+            if hide_rest:
+                spectrogram_indices = indices_comp
+            else:
+                spectrogram_indices = range(segmentation.get_number_segments())
+        else:
+            comp_pos, comp_neg = [], []
+            for x in explanation[:num_features]:
+                if x[1] > 0 and x[1] > min_weight:
+                    comp_pos.append(x[0])
+                elif x[1] < 0 and np.abs(x[1]) > min_weight:
+                    comp_neg.append(x[0])
+            # get masked image for both positive and negative with red and green parts
+            mask = segmentation.return_mask_boundaries(comp_pos, comp_neg)
+            if hide_rest:
+                spectrogram_indices = comp_pos + comp_neg
+            else:
+                spectrogram_indices = range(segmentation.get_number_segments())
+
+        spectrogram = segmentation.return_spectrogram_indices(spectrogram_indices)
+        spec_db = librosa.power_to_db(spectrogram, ref=np.max)
+        marked = mark_boundaries(spec_db, mask)
+        plt.imshow(marked[:, :, 2], origin="lower", cmap=plt.get_cmap("magma"))
+        plt.colorbar(format='%+2.0f dB')
+        if not (negative_only or positive_only):
+            image_array = np.ones(np.shape(mask) + (4,))
+            mask_negative = np.zeros(np.shape(mask))
+            mask_negative[np.where(mask == 0)] = 1
+            mask_negative_green = np.ones(np.shape(mask))
+            mask_negative_green[np.where(mask == -1)] = 0
+            mask_negative_red = np.ones(np.shape(mask))
+            mask_negative_red[np.where(mask == 1)] = 0
+            image_array[:, :, 0] = mask_negative_red #0 for green, 1 for red
+            image_array[:, :, 1] = mask_negative_green
+            image_array[:, :, 2] = mask_negative
+            image_array[:, :, 3] = np.abs(mask)
+            plt.imshow(image_array, origin="lower", interpolation="nearest", alpha=0.5)
+
+        if save_path is not None:
+            plt.savefig(save_path)
+        plt.show()
 
     def as_pyplot_figure(self, label=0):
         """Returns the explanation as a pyplot figure.

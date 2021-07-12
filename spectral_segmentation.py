@@ -36,7 +36,6 @@ class SpectralSegmentation(object):
             # last component
             self.segments[self.num_segments-1, (self.num_segments-1)*len_component:, :] = spectrogram[(self.num_segments-1)*len_component, :]
 
-
     def initialize_fudged_segments(self):
         print("still needs to be implemented")
 
@@ -59,3 +58,33 @@ class SpectralSegmentation(object):
         mask[indices] = True
         audio = self.get_segments_mask(mask)
         return audio
+
+    def return_spectrogram_indices(self, indices):
+        mask = np.zeros((self.num_segments,)).astype(bool)
+        mask[indices] = True
+        combined_spec = np.sum(self.segments[mask, :, :], axis=0)
+        return combined_spec
+
+    def return_mask_boundaries(self, positive_indices, negative_indices):
+        mask = np.zeros(np.shape(self.segments[0, :, :]), dtype=np.byte)
+        if 128 % self.num_segments == 0:
+            len_component = 128 / self.num_segments
+            for i in range(self.num_segments):
+                if i in positive_indices:
+                    mask[(i*len_component+1):((i+1)*len_component-1), 1:-1] = 1
+                elif i in negative_indices:
+                    mask[(i*len_component+1):((i+1)*len_component-1), 1:-1] = 2
+        else:
+            len_component = int(128 / self.num_segments + 1)
+            for i in range(self.num_segments - 1):
+                if i in positive_indices:
+                    mask[(i*len_component+1):((i+1)*len_component-1), 1:-1] = 1
+                elif i in negative_indices:
+                    mask[(i*len_component+1):((i+1)*len_component-1), 1:-1] = -1
+            # last component
+            if (self.num_segments - 1) in positive_indices:
+                mask[((self.num_segments-1)*len_component+1):-1, 1:-1] = 1
+            elif (self.num_segments - 1) in negative_indices:
+                mask[((self.num_segments-1)*len_component+1):-1, 1:-1] = -1
+
+        return mask
