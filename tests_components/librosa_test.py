@@ -53,7 +53,49 @@ def test_spectral_decomposition():
     print("elapsed time:", end - start)
 
 
+def compare_inverses():
+    filename = 'AtACyGlV_cough.flac'
+    audio_path = f'/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release/AUDIO/{filename}'
+    audio, sample_rate = librosa.load(audio_path)
+    # spectrogram
+    start = time.time()
+    spectrogram = librosa.feature.melspectrogram(y=audio, sr=sample_rate)
+    end = time.time()
+    print("time spec extraction", end - start)
+    start = time.time()
+    # reconstructed_audio_mel = librosa.feature.inverse.mel_to_audio(spectrogram, n_iter=8 , sr=sample_rate)
+    end = time.time()
+    print("Elapsed time spectrogram reconstruction: ", end - start)
+    start = time.time()
+    mfcc = librosa.feature.mfcc(y=audio, sr=sample_rate)
+    deltas = librosa.feature.delta(mfcc)
+    print(np.shape(mfcc))
+    features = np.concatenate((mfcc, deltas), axis=0)
+
+    ddeltas = librosa.feature.delta(mfcc, order=2)
+    features = np.concatenate((features, ddeltas), axis=0)
+
+    print(np.shape(features))
+    librosa.display.specshow(mfcc)
+    plt.show()
+    librosa.display.specshow(features)
+    plt.show()
+    end = time.time()
+    print("time mfcc extraction", end - start)
+    start = time.time()
+    reconstructed_audio_mfcc = librosa.feature.inverse.mfcc_to_audio(mfcc=mfcc, sr=sample_rate)
+    end = time.time()
+    print("Elapsed time mfcc reconstruction: ", end - start)
+    print('done :) ')
+
+
+def test_mfcc():
+    pass
+
+
 if __name__ == "__main__":
     # test_lime_image()
     # test_audio()
-    test_spectral_decomposition()
+    # test_spectral_decomposition()
+    test_mfcc()
+    compare_inverses()

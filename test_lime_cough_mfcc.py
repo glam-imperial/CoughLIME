@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 import sys
 import lime_cough
-from spectral_segmentation import SpectralSegmentation
+from mfcc_segmentation import MFCCSegmentation
 import soundfile
 import warnings
 import random
@@ -14,7 +14,7 @@ import time
 
 
 def get_explanation(audio, sample_rate, total_components):
-    factorization = SpectralSegmentation(audio, sample_rate, total_components)
+    factorization = MFCCSegmentation(audio, sample_rate, total_components)
     explainer = lime_cough.LimeCoughExplainer()
     explanation = explainer.explain_instance(segmentation=factorization,
                                              classifier_fn=predict_dicova.predict,
@@ -155,11 +155,10 @@ def test_single_file():
     start = time.time()
     audio_path = '/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release/AUDIO/AtACyGlV_cough.flac'
     predicted_entire = predict_dicova.predict_single_audio(audio_path)
-    # TODO: adapt
     audio, fs = librosa.load(audio_path)
     total_components = 7
     explanation, factorization = get_explanation(audio, fs, total_components)
-    filename = 'mel_test1234'
+    filename = 'mfcc_test1234'
     save_mix(explanation, 3, filename, factorization, fs, gen_random=False)
     path_name = f"./quantitative_evaluation/3_components/explanations/{filename[:-5]}_e.wav"
     prediction_exp = predict_dicova.predict_single_audio(path_name)
@@ -167,11 +166,11 @@ def test_single_file():
     print(prediction_exp)
     figure = explanation.as_pyplot_figure()
     figure.show()
-    figure.savefig('./explanation_mel.png')
-    explanation.show_image_mask_spectrogram(0, positive_only=True, negative_only=False, hide_rest=True, num_features=5, min_weight=0., save_path='./tests_components/test1_mel.png')
-    explanation.show_image_mask_spectrogram(0, positive_only=False, negative_only=False, hide_rest=False, num_features=5, min_weight=0., save_path='./tests_components/test2_mel.png')
+    figure.savefig('./explanation_mfcc.png')
+    explanation.show_image_mask_spectrogram(0, positive_only=True, negative_only=False, hide_rest=False, num_features=5, min_weight=0., save_path='./tests_components/test1_mfcc.png')
+    explanation.show_image_mask_spectrogram(0, positive_only=False, negative_only=False, hide_rest=False, num_features=5, min_weight=0., save_path='./tests_components/test2_mfcc.png')
     end = time.time()
-    print("time elapsed for mel:", end - start)
+    print("time taken for mfcc", end - start)
 
 
 def perform_quantitative_analysis():

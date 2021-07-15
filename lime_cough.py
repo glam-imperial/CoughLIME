@@ -146,7 +146,9 @@ class CoughExplanation(object):
             image_array[:, :, 2] = mask_negative
             image_array[:, :, 3] = np.abs(mask)
             plt.imshow(image_array, origin="lower", interpolation="nearest", alpha=0.5)
-
+        plt.axis("off")
+        plt.xlabel("time")
+        plt.title("Most important components for local prediction of class COVID-positive")
         if save_path is not None:
             plt.savefig(save_path)
         plt.show()

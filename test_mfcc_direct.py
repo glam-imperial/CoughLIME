@@ -5,19 +5,23 @@ from pathlib import Path
 import pandas as pd
 import sys
 import lime_cough
-from spectral_segmentation import SpectralSegmentation
+from segmentation_mfcc_direct import MFCCDirectSegmentation
 import soundfile
 import warnings
 import random
-import predict_dicova
+import predict_from_mfcc
 import time
+import configparser
 
 
 def get_explanation(audio, sample_rate, total_components):
-    factorization = SpectralSegmentation(audio, sample_rate, total_components)
+    this_config = '/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_baseline/conf/feature.conf'
+    config = configparser.ConfigParser()
+    config.read(this_config)
+    factorization = MFCCDirectSegmentation(audio, sample_rate, total_components, config=config)
     explainer = lime_cough.LimeCoughExplainer()
     explanation = explainer.explain_instance(segmentation=factorization,
-                                             classifier_fn=predict_dicova.predict,
+                                             classifier_fn=predict_from_mfcc.predict,
                                              labels=[0],
                                              num_samples=64,
                                              batch_size=16,
@@ -27,20 +31,19 @@ def get_explanation(audio, sample_rate, total_components):
 
 def save_mix(explanation, num_components, filename, factorization, sample_rate, gen_random=False):
     label = list(explanation.local_exp.keys())[0]
-    audio, component_indeces = explanation.get_exp_components(label, positive_components=True,
+    _, component_indeces = explanation.get_exp_components(label, positive_components=True,
                                                               negative_components=True,
                                                               num_components=num_components,
                                                               return_indeces=True)
     # num components: how many components should model take for explanations
     path_name_write = f"./quantitative_evaluation/{num_components}_components/explanations/{filename[:-5]}_e.wav"
+    audio = factorization.return_audio_from_indices(component_indeces)
     soundfile.write(path_name_write, audio, sample_rate)
     print("Indices", component_indeces)
     if gen_random:
         # random components must also be generated
-        random_mask = np.zeros(factorization.get_number_segments(),).astype(bool)
         random_indices = random.sample(range(factorization.get_number_segments()), num_components)
-        random_mask[random_indices] = True
-        random_audio = factorization.get_segments_mask(random_mask)
+        random_audio = factorization.return_audio_from_indices(random_indices)
         path_name_write = f"./quantitative_evaluation/{num_components}_components/random_components/{filename[:-5]}_r.wav"
         soundfile.write(path_name_write, random_audio, sample_rate)
 
@@ -77,7 +80,7 @@ def save_predictions_explanations(components, total_components):
             file_names.append(filename)
 
             # get prediction for whole audio file
-            prediction_overall = predict_dicova.predict_single_audio(path_file)
+            prediction_overall = predict_from_mfcc.predict_single_audio(path_file)
             predictions_entire_file.append(prediction_overall)
 
             # get explanation
@@ -91,10 +94,10 @@ def save_predictions_explanations(components, total_components):
 
                 # get predictions
                 path_name = f"./quantitative_evaluation/{num_components}_components/explanations/{filename[:-5]}_e.wav"
-                prediction_exp = predict_dicova.predict_single_audio(path_name)
+                prediction_exp = predict_from_mfcc.predict_single_audio(path_name)
 
                 path_name = f"./quantitative_evaluation/{num_components}_components/random_components/{filename[:-5]}_r.wav"
-                prediction_rand = predict_dicova.predict_single_audio(path_name)
+                prediction_rand = predict_from_mfcc.predict_single_audio(path_name)
 
                 comp_exp[index].append(prediction_exp)
                 comp_random[index].append(prediction_rand)
@@ -154,24 +157,23 @@ def evaluate_data(components):
 def test_single_file():
     start = time.time()
     audio_path = '/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release/AUDIO/AtACyGlV_cough.flac'
-    predicted_entire = predict_dicova.predict_single_audio(audio_path)
-    # TODO: adapt
+    predicted_entire = predict_from_mfcc.predict_single_audio(audio_path)
     audio, fs = librosa.load(audio_path)
     total_components = 7
     explanation, factorization = get_explanation(audio, fs, total_components)
-    filename = 'mel_test1234'
+    filename = 'mfcc_test1234'
     save_mix(explanation, 3, filename, factorization, fs, gen_random=False)
     path_name = f"./quantitative_evaluation/3_components/explanations/{filename[:-5]}_e.wav"
-    prediction_exp = predict_dicova.predict_single_audio(path_name)
+    prediction_exp = predict_from_mfcc.predict_single_audio(path_name)
     print(predicted_entire)
     print(prediction_exp)
     figure = explanation.as_pyplot_figure()
     figure.show()
-    figure.savefig('./explanation_mel.png')
-    explanation.show_image_mask_spectrogram(0, positive_only=True, negative_only=False, hide_rest=True, num_features=5, min_weight=0., save_path='./tests_components/test1_mel.png')
-    explanation.show_image_mask_spectrogram(0, positive_only=False, negative_only=False, hide_rest=False, num_features=5, min_weight=0., save_path='./tests_components/test2_mel.png')
+    figure.savefig('./explanation_mfcc.png')
+    explanation.show_image_mask_spectrogram(0, positive_only=True, negative_only=False, hide_rest=False, num_features=5, min_weight=0., save_path='./tests_components/test1_mfcc.png')
+    explanation.show_image_mask_spectrogram(0, positive_only=False, negative_only=False, hide_rest=False, num_features=5, min_weight=0., save_path='./tests_components/test2_mfcc.png')
     end = time.time()
-    print("time elapsed for mel:", end - start)
+    print("time taken for mfcc", end - start)
 
 
 def perform_quantitative_analysis():

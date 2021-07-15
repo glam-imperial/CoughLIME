@@ -35,5 +35,4 @@ if __name__ == "__main__":
     plt.imshow(image_array, origin="lower", interpolation="nearest", alpha=0.5)  # set opacity with alpha value
     plt.savefig("./spec.png")
     plt.show()
-    # TODO: check how to save a figure
     print("done")
