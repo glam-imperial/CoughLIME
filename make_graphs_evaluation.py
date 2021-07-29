@@ -19,7 +19,7 @@ def make_graph(comps, values, save_path):
         plt.plot(c, values[1, index], 'bo')
     plt.plot(comps, values[0, :], 'r', label='Explanations')
     plt.plot(comps, values[1, :], 'b', label='Random components')
-    plt.title("Spectral decomposition: correct percentage per k out of 7 components")  # TODO: adapt
+    plt.title("MFCC Direct: correct percentage per k out of 7 components")  # TODO: adapt
     plt.xticks(comps)
 
     plt.xlabel("Number of components")
@@ -31,7 +31,7 @@ def make_graph(comps, values, save_path):
 
 if __name__ == "__main__":
     components = [1, 3, 5, 7]
-    path_text_files = '/Users/anne/PycharmProjects/LIME_cough/old_eval/quantitative_evaluation_spectral/'  # TODO: adapt
+    path_text_files = '/Users/anne/PycharmProjects/LIME_cough/old_eval/quantitative_evaluation_mfcc_direct/'  # TODO: adapt
     percentages = np.zeros((2, len(components)))
     for i, comp in enumerate(components):
         summary_path = f"{path_text_files}/{comp}_components.txt"

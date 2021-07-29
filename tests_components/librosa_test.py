@@ -93,9 +93,41 @@ def test_mfcc():
     pass
 
 
+def check_inverse_quality():
+    filename = 'AtACyGlV_cough.flac'
+    audio_path = f'/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release/AUDIO/{filename}'
+    audio, sample_rate = librosa.load(audio_path)
+    # spectrogram
+    start = time.time()
+    spectrogram = librosa.feature.melspectrogram(y=audio, sr=sample_rate)
+    end = time.time()
+    print("time spec extraction", end - start)
+    start = time.time()
+    reconstructed_audio_mel = librosa.feature.inverse.mel_to_audio(spectrogram, n_iter=8 , sr=sample_rate)
+    end = time.time()
+    print("Elapsed time spectrogram reconstruction: ", end - start)
+    start = time.time()
+    mfcc = librosa.feature.mfcc(y=audio, sr=sample_rate)
+    print("time mfcc extraction", end - start)
+    start = time.time()
+    reconstructed_audio_mfcc = librosa.feature.inverse.mfcc_to_audio(mfcc=mfcc, sr=sample_rate)
+    end = time.time()
+    print("Elapsed time mfcc reconstruction: ", end - start)
+    norm_l1_mel = np.linalg.norm((audio[:113664] - reconstructed_audio_mel), ord=1)
+    norm_l2_mel = np.linalg.norm((audio[:113664] - reconstructed_audio_mel))
+    norm_l1_mfcc = np.linalg.norm((audio[:113664] - reconstructed_audio_mfcc), ord=1)
+    norm_l2_mfcc = np.linalg.norm((audio[:113664] - reconstructed_audio_mfcc))
+    print("L1 norm audio - reconstructed audio from mel features:", norm_l1_mel)
+    print("L1 norm audio - reconstructed audio from mfcc features:", norm_l1_mfcc)
+    print("L2 norm audio - reconstructed audio from mel features:", norm_l2_mel)
+    print("L2 norm audio - reconstructed audio from mfcc features:", norm_l2_mfcc)
+    print('done :) ')
+
+
 if __name__ == "__main__":
     # test_lime_image()
     # test_audio()
     # test_spectral_decomposition()
-    test_mfcc()
-    compare_inverses()
+    #test_mfcc()
+    #compare_inverses()
+    check_inverse_quality()

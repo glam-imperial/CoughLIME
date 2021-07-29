@@ -43,8 +43,6 @@ class SpectralSegmentation(object):
     def get_segments_mask(self, mask):
         # mask: array of false and true, length of num_segments
         # get segments for true and fudged for false
-        # sum(arr1[mask, :, :])
-        # retransform to audio with librosa         reconstructed_audio = librosa.feature.inverse.mel_to_audio(spectrogram, sr=sample_rate)
         if len(mask) != self.num_segments:
             print('Error: mask has incorrect length')
         mask = np.array(mask)
@@ -88,3 +86,22 @@ class SpectralSegmentation(object):
                 mask[((self.num_segments-1)*len_component+1):-1, 1:-1] = -1
 
         return mask
+
+    def return_weighted_segments(self, used_features, weights):
+        """
+        used_features: array of indices of features to include. weights: array of their corresponding weights
+        weights[i] is weight of feature[i]
+        """
+        # normalize weights
+        sum_weights = np.sum(np.abs(weights))
+        weights = weights / sum_weights
+        mask_weights = np.zeros((self.num_segments,))
+        # make weighted sum
+        for index, feature in enumerate(used_features):
+            mask_weights[feature] = weights[index]
+        weighted_spectrogram = np.zeros(np.shape(self.segments[0, :, :]))
+        for comp in range(self.num_segments):
+            if mask_weights[comp] != 0:
+                weighted_spectrogram += abs(mask_weights[comp]) * self.segments[comp, :, :]
+        reconstructed_audio = librosa.feature.inverse.mel_to_audio(weighted_spectrogram, sr=self.sample_rate)
+        return reconstructed_audio

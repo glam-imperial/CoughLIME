@@ -38,6 +38,15 @@ class CoughExplanation(object):
 
     def get_exp_components(self, label, positive_components=True, negative_components=True, num_components='all',
                               min_abs_weight=0.0, return_indeces=False):
+        """
+        :param label:
+        :param positive_components:
+        :param negative_components:
+        :param num_components:
+        :param min_abs_weight:
+        :param return_indeces:
+        :return: audio that is made of the most important num_components for the explanation
+        """
         if label not in self.local_exp:
             raise KeyError('Label not in explanation')
         if positive_components is False and negative_components is False:
@@ -73,26 +82,63 @@ class CoughExplanation(object):
             return audio, used_features
         return audio
 
-    def show_image_mask_spectrogram(self, label, positive_only=True, negative_only=False, hide_rest=True, num_features=5, min_weight=0., save_path=None):
-        """Init function.
+    def weighted_audio(self, label, positive_components=True, negative_components=False, num_components='all',
+                            min_abs_weight=0.0, return_indeces=False):
+        # returns weighted audio (weighted by abs value of components)
+        if label not in self.local_exp:
+            raise KeyError('Label not in explanation')
+        if positive_components is False and negative_components is False:
+            raise ValueError('positive_components, negative_components or both must be True')
 
+        exp = self.local_exp[label]
+
+        w = [[x[0], x[1]] for x in exp]
+        used_features, weights = np.array(w, dtype=int)[:, 0], np.array(w)[:, 1] # used features is array of components, with array of weights of same length
+
+        if not negative_components:
+            pos_weights = np.argwhere(weights > 0)[:, 0]
+            used_features = used_features[pos_weights]
+            weights = weights[pos_weights]
+        elif not positive_components:
+            neg_weights = np.argwhere(weights < 0)[:, 0]
+            used_features = used_features[neg_weights]
+            weights = weights[neg_weights]
+        if min_abs_weight != 0.0:
+            abs_weights = np.argwhere(abs(weights) >= min_abs_weight)[:, 0]
+            used_features = used_features[abs_weights]
+            weights = weights[abs_weights]
+
+        if num_components == 'all':
+            num_components = len(used_features)
+        else:
+            assert(isinstance(num_components, int))
+            # max_components = used_features[:num_components]
+
+        used_features = used_features[:num_components]
+        weights = weights[:num_components]
+        audio = self.segmentation.return_weighted_segments(used_features, weights)
+        if return_indeces:
+            return audio, used_features
+        return audio
+
+
+    def show_image_mask_spectrogram(self, label, positive_only=True, negative_only=False, hide_rest=True, num_features=5, min_weight=0., save_path=None):
+        """
+        This only works for spectral decomposition!
+        # TODO: implement check if spectral decomposition is selected (probably via self.factorization.argument)
         Args:
             label: label to explain
-            positive_only: if True, only take superpixels that positively contribute to
+            positive_only: if True, only take components that positively contribute to
                 the prediction of the label.
-            negative_only: if True, only take superpixels that negatively contribute to
+            negative_only: if True, only take components that negatively contribute to
                 the prediction of the label. If false, and so is positive_only, then both
-                negativey and positively contributions will be taken.
+                negative and positive contributions will be taken.
                 Both can't be True at the same time
             hide_rest: if True, make the non-explanation part of the return
                 image gray
-            num_features: number of superpixels to include in explanation
+            num_features: number of components to include in explanation
             min_weight: minimum weight of the superpixels to include in explanation
-
-        Returns:
-            (image, mask), where image is a 3d numpy array and mask is a 2d
-            numpy array that can be used with
-            skimage.segmentation.mark_boundaries
+            save_path: path under which to save the obtained image for the explanation
         """
         if label not in self.local_exp:
             raise KeyError('Label not in explanation')
@@ -146,16 +192,19 @@ class CoughExplanation(object):
             image_array[:, :, 2] = mask_negative
             image_array[:, :, 3] = np.abs(mask)
             plt.imshow(image_array, origin="lower", interpolation="nearest", alpha=0.5)
-        plt.axis("off")
-        plt.xlabel("time")
-        plt.title("Most important components for local prediction of class COVID-positive")
+        plt.xlabel("Time")
+        plt.ylabel("Frequency")
+        ax = plt.gca()
+        ax.axes.xaxis.set_ticks([])
+        ax.axes.yaxis.set_ticks([])
+        plt.title("Most important components for local\nprediction of class COVID-positive")
         if save_path is not None:
             plt.savefig(save_path)
         plt.show()
 
     def as_pyplot_figure(self, label=0):
         """Returns the explanation as a pyplot figure.
-
+        this works for any decomposition
         Will throw an error if you don't have matplotlib installed
         Args:
             label: desired label. If you ask for a label for which an
@@ -177,7 +226,9 @@ class CoughExplanation(object):
         pos = np.arange(len(exp)) + .5
         plt.barh(pos, vals, align='center', color=colors)
         plt.yticks(pos, names)
-        title = 'Local explanation for class COVID-positive'
+        title = 'Importance of components towards local\nexplanation for class COVID-positive'
+        plt.xlabel('Component weights')
+        plt.ylabel('Component indices')
         plt.title(title)
         return fig
 

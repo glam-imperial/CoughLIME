@@ -34,5 +34,11 @@ if __name__ == "__main__":
     image_array[:, :, 3] = np.abs(mask)
     plt.imshow(image_array, origin="lower", interpolation="nearest", alpha=0.5)  # set opacity with alpha value
     plt.savefig("./spec.png")
+    plt.xlabel("Time")
+    plt.ylabel("Frequency'")
+    ax = plt.gca()
+    ax.axes.xaxis.set_ticks([])
+    ax.axes.yaxis.set_ticks([])
+    plt.title("Most important components for local\nprediction of class COVID-positive")
     plt.show()
     print("done")
