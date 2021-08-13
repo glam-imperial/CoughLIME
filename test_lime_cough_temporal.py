@@ -110,7 +110,7 @@ def save_predictions_explanations(components, total_components):
         summary_df.to_csv(path_csv)
 
 
-def evaluate_data(components):
+def evaluate_data(components, run):
     for num_components in components:
         path_df = f'./quantitative_evaluation/{num_components}_components/summary.csv'
         df = pd.read_csv(path_df)
@@ -137,7 +137,7 @@ def evaluate_data(components):
         percentage_rand = float(true_rand) / float(number_data)
         print("Percentage of true explanations", percentage_true_exp)
         print("Percentage of random true predictions", percentage_rand)
-        path_save_summary = f"./quantitative_evaluation/{num_components}_components.txt"
+        path_save_summary = f"./quantitative_evaluation/output_run_{run}/{num_components}_components.txt"
         with open(path_save_summary, 'w') as summary:
             summary.write(f"Number samples: {number_data}")
             summary.write("\n")
@@ -178,12 +178,26 @@ def perform_quantitative_analysis():
     evaluate_data(components)
 
 
+def significance_tests(total_runs):
+    for run in range(total_runs):
+        components = [1, 3, 5, 7]
+        total_components = 7
+        new_directory_name = './quantitative_evaluation'
+        Path(new_directory_name).mkdir(parents=True, exist_ok=True)
+        save_predictions_explanations(components, total_components)
+        new_directory_name = f'./quantitative_evaluation/output_run_{run}'
+        Path(new_directory_name).mkdir(parents=True, exist_ok=True)
+        evaluate_data(components, run)
+
+
 if __name__ == '__main__':
     #test on single file
     # TODO: adapt path
     sys.path.append('/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_baseline')
     warnings.filterwarnings("ignore", message="Trying to unpickle estimator LogisticRegression from version 0.24.1 when using version 0.24.2. This might lead to breaking code or invalid results. Use at your own risk.")
-    test_single_file()
+    # test_single_file()
 
     # make folder for results of quantitative analysis
-    #perform_quantitative_analysis()
+    # perform_quantitative_analysis()
+    total_runs = 5
+    significance_tests(total_runs)

@@ -5,6 +5,7 @@ import librosa
 class SpectralSegmentation(object):
     def __init__(self, audio, sample_rate, num_segments, segmentation_type='mel_spectrogram'):
         """audio:np array of shape (n,) -> mono audio
+        TODO: padding to ensure constant size after spectrogram conversion??
         """
         self.num_segments = num_segments
         self.audio = audio

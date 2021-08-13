@@ -65,39 +65,42 @@ def save_predictions_explanations(components, total_components):
 
     # TODO: adapt path
     audio_directory_str = '/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release/AUDIO'
-    audio_directory = os.fsencode(audio_directory_str)
+    # audio_directory = os.fsencode(audio_directory_str)
 
+    list_file = '/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release/LISTS/val_fold_1.txt'
+
+    with open(list_file) as f:
+        files_to_process = [line.rstrip() for line in f]
     counter = 0
 
-    for file in os.listdir(audio_directory):
-        filename = os.fsdecode(file)
-        if filename.endswith(".flac"):
-            print("Starting with... ", filename)
-            path_file = f'{audio_directory_str}/{filename}'
-            file_names.append(filename)
+    for file in files_to_process:
+    #   filename = os.fsdecode(file)
+        filename = f'{file}.flac'
+        print("Starting with... ", filename)
+        file_names.append(file)
+        path_file = f'{audio_directory_str}/{filename}'
+        # get prediction for whole audio file
+        prediction_overall = predict_dicova.predict_single_audio(path_file)
+        predictions_entire_file.append(prediction_overall)
 
-            # get prediction for whole audio file
-            prediction_overall = predict_dicova.predict_single_audio(path_file)
-            predictions_entire_file.append(prediction_overall)
+        # get explanation
+        fs = librosa.get_samplerate(path_file)
+        audio, _ = librosa.load(path_file, sr=fs)
+        explanation, factorization = get_explanation(audio, fs, total_components)
 
-            # get explanation
-            fs = librosa.get_samplerate(path_file)
-            audio, _ = librosa.load(path_file, sr=fs)
-            explanation, factorization = get_explanation(audio, fs, total_components)
+        # get mixes for top_components and save them
+        for index, num_components in enumerate(components):
+            save_mix(explanation, num_components, filename, factorization, fs, gen_random=True)
 
-            # get mixes for top_components and save them
-            for index, num_components in enumerate(components):
-                save_mix(explanation, num_components, filename, factorization, fs, gen_random=True)
+            # get predictions
+            path_name = f"./quantitative_evaluation/{num_components}_components/explanations/{filename[:-5]}_e.wav"
+            prediction_exp = predict_dicova.predict_single_audio(path_name)
 
-                # get predictions
-                path_name = f"./quantitative_evaluation/{num_components}_components/explanations/{filename[:-5]}_e.wav"
-                prediction_exp = predict_dicova.predict_single_audio(path_name)
+            path_name = f"./quantitative_evaluation/{num_components}_components/random_components/{filename[:-5]}_r.wav"
+            prediction_rand = predict_dicova.predict_single_audio(path_name)
 
-                path_name = f"./quantitative_evaluation/{num_components}_components/random_components/{filename[:-5]}_r.wav"
-                prediction_rand = predict_dicova.predict_single_audio(path_name)
-
-                comp_exp[index].append(prediction_exp)
-                comp_random[index].append(prediction_rand)
+            comp_exp[index].append(prediction_exp)
+            comp_random[index].append(prediction_rand)
         else:
             print("Information: different file extension detected: ", file)
         counter += 1
@@ -111,7 +114,7 @@ def save_predictions_explanations(components, total_components):
         summary_df.to_csv(path_csv)
 
 
-def evaluate_data(components):
+def evaluate_data(components, run):
     for num_components in components:
         path_df = f'./quantitative_evaluation/{num_components}_components/summary.csv'
         df = pd.read_csv(path_df)
@@ -138,7 +141,7 @@ def evaluate_data(components):
         percentage_rand = float(true_rand) / float(number_data)
         print("Percentage of true explanations", percentage_true_exp)
         print("Percentage of random true predictions", percentage_rand)
-        path_save_summary = f"./quantitative_evaluation/{num_components}_components.txt"
+        path_save_summary = f"./quantitative_evaluation/output_run_{run}/{num_components}_components.txt"
         with open(path_save_summary, 'w') as summary:
             summary.write(f"Number samples: {number_data}")
             summary.write("\n")
@@ -187,15 +190,32 @@ def perform_quantitative_analysis():
     new_directory_name = './quantitative_evaluation'
     Path(new_directory_name).mkdir(parents=True, exist_ok=True)
     save_predictions_explanations(components, total_components)
-    evaluate_data(components)
+    evaluate_data(components, 1)  # adapt
+
+
+def significance_tests(total_runs):
+    for run in range(total_runs):
+        components = [1, 3, 5, 7]
+        total_components = 7
+        new_directory_name = './quantitative_evaluation'
+        Path(new_directory_name).mkdir(parents=True, exist_ok=True)
+        save_predictions_explanations(components, total_components)
+        new_directory_name = f'./quantitative_evaluation/output_run_{run}'
+        Path(new_directory_name).mkdir(parents=True, exist_ok=True)
+        evaluate_data(components, run)
 
 
 if __name__ == '__main__':
-    #test on single file
+    # test on single file
     # TODO: adapt path
     sys.path.append('/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_baseline')
     warnings.filterwarnings("ignore", message="Trying to unpickle estimator LogisticRegression from version 0.24.1 when using version 0.24.2. This might lead to breaking code or invalid results. Use at your own risk.")
-    test_single_file()
+    # test_single_file()
 
     # make folder for results of quantitative analysis
-    #perform_quantitative_analysis()
+    # perform_quantitative_analysis()
+
+    runs = 5
+    significance_tests(runs)
+
+
