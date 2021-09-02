@@ -3,4 +3,7 @@ quantitative_evaluation/*
 lime-master/*
 spectral_tests/*
 old_evals/*
+eval/*
+figures/*
+*.csv
 

@@ -121,14 +121,6 @@ class CoughExplanation(object):
             return audio, used_features
         return audio
 
-    def normalize(self, weights):
-        abs_weights = np.abs(np.array(weights))
-        minimum = min(abs_weights) - 0.1 * max(abs_weights)
-        maximum = max(abs_weights) + 0.1  * max(abs_weights)
-        normalized = np.zeros(np.shape(abs_weights))
-        for i, w in enumerate(abs_weights):
-            normalized[i] = (abs_weights[i] - minimum) / (maximum - minimum)  # zi = (xi – min(x)) / (max(x) – min(x))
-        return normalized
 
     def show_image_mask_spectrogram(self, label, positive_only=True, negative_only=False, hide_rest=True, num_features=5, min_weight=0., save_path=None):
         """
@@ -156,12 +148,12 @@ class CoughExplanation(object):
         explanation = self.local_exp[label]
 
         if positive_only:
-            indices_comp = [x[0] for x in explanation if x[1] > 0 and x[1] > min_weight][:num_features]
-            weights = [x[1] for x in explanation if x[1] > 0 and x[1] > min_weight][:num_features]
+            indices_comp = [x[0] for x in explanation
+                  if x[1] > 0 and x[1] > min_weight][:num_features]
             mask = segmentation.return_mask_boundaries(indices_comp, [])
         if negative_only:
-            indices_comp = [x[0] for x in explanation if x[1] < 0 and abs(x[1]) > min_weight][:num_features]
-            weights = [x[1] for x in explanation if x[1] < 0 and abs(x[1]) > min_weight][:num_features]
+            indices_comp = [x[0] for x in explanation
+                  if x[1] < 0 and abs(x[1]) > min_weight][:num_features]
             mask = segmentation.return_mask_boundaries([], indices_comp)
         if positive_only or negative_only:
             if hide_rest:
@@ -170,14 +162,12 @@ class CoughExplanation(object):
                 spectrogram_indices = range(segmentation.get_number_segments())
         else:
             comp_pos, comp_neg = [], []
-            indices_comp, weights = [], []
             for x in explanation[:num_features]:
-                indices_comp.append(x[0])
-                weights.append(x[1])
                 if x[1] > 0 and x[1] > min_weight:
                     comp_pos.append(x[0])
                 elif x[1] < 0 and np.abs(x[1]) > min_weight:
                     comp_neg.append(x[0])
+            # get masked image for both positive and negative with red and green parts
             mask = segmentation.return_mask_boundaries(comp_pos, comp_neg)
             if hide_rest:
                 spectrogram_indices = comp_pos + comp_neg
@@ -190,27 +180,6 @@ class CoughExplanation(object):
         plt.imshow(marked[:, :, 2], origin="lower", cmap=plt.get_cmap("magma"))
         plt.colorbar(format='%+2.0f dB')
         if not (negative_only or positive_only):
-            normalized_weights = self.normalize(weights)
-            for index, comp in enumerate(indices_comp):
-                image_array = np.ones(np.shape(mask) + (4,))
-                if weights[index] < 0:
-                    mask = segmentation.return_mask_boundaries([], [comp])
-                else:
-                    mask = segmentation.return_mask_boundaries([comp], [])
-                mask_negative = np.zeros(np.shape(mask))
-                mask_negative[np.where(mask == 0)] = 1
-                mask_negative_green = np.ones(np.shape(mask))
-                mask_negative_green[np.where(mask == -1)] = 0
-                mask_negative_red = np.ones(np.shape(mask))
-                mask_negative_red[np.where(mask == 1)] = 0
-                image_array[:, :, 0] = mask_negative_red #0 for red, 1 for green
-                image_array[:, :, 1] = mask_negative_green
-                image_array[:, :, 2] = mask_negative
-                image_array[:, :, 3] = np.abs(mask)
-                plt.imshow(image_array, origin="lower", interpolation="nearest", alpha=normalized_weights[index])
-
-            # old starting
-            """
             image_array = np.ones(np.shape(mask) + (4,))
             mask_negative = np.zeros(np.shape(mask))
             mask_negative[np.where(mask == 0)] = 1
@@ -218,11 +187,11 @@ class CoughExplanation(object):
             mask_negative_green[np.where(mask == -1)] = 0
             mask_negative_red = np.ones(np.shape(mask))
             mask_negative_red[np.where(mask == 1)] = 0
-            image_array[:, :, 0] = mask_negative_red #0 for red, 1 for green
+            image_array[:, :, 0] = mask_negative_red #0 for green, 1 for red
             image_array[:, :, 1] = mask_negative_green
             image_array[:, :, 2] = mask_negative
             image_array[:, :, 3] = np.abs(mask)
-            plt.imshow(image_array, origin="lower", interpolation="nearest", alpha=0.5)"""
+            plt.imshow(image_array, origin="lower", interpolation="nearest", alpha=0.5)
         plt.xlabel("Time")
         plt.ylabel("Frequency")
         ax = plt.gca()
@@ -232,6 +201,36 @@ class CoughExplanation(object):
         if save_path is not None:
             plt.savefig(save_path)
         plt.show()
+
+    def as_pyplot_figure(self, label=0):
+        """Returns the explanation as a pyplot figure.
+        this works for any decomposition
+        Will throw an error if you don't have matplotlib installed
+        Args:
+            label: desired label. If you ask for a label for which an
+                   explanation wasn't computed, will throw an exception.
+                   Will be ignored for regression explanations.
+            kwargs: keyword arguments, passed to domain_mapper
+
+        Returns:
+            pyplot figure (barchart).
+        """
+        import matplotlib.pyplot as plt
+        exp = self.local_exp[label]
+        fig = plt.figure()
+        vals = [x[1] for x in exp]
+        names = [x[0] for x in exp]
+        vals.reverse()
+        names.reverse()
+        colors = ['green' if x > 0 else 'red' for x in vals]
+        pos = np.arange(len(exp)) + .5
+        plt.barh(pos, vals, align='center', color=colors)
+        plt.yticks(pos, names)
+        title = 'Importance of components towards local\nexplanation for class COVID-positive'
+        plt.xlabel('Component weights')
+        plt.ylabel('Component indices')
+        plt.title(title)
+        return fig
 
 
 class LimeCoughExplainer(object):
