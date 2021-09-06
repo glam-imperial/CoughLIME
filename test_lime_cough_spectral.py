@@ -19,7 +19,7 @@ def get_explanation(audio, sample_rate, total_components):
     explanation = explainer.explain_instance(segmentation=factorization,
                                              classifier_fn=predict_dicova.predict,
                                              labels=[0],
-                                             num_samples=5,
+                                             num_samples=64,
                                              batch_size=16,
                                              )
     return explanation, factorization

@@ -130,7 +130,7 @@ class CoughExplanation(object):
             normalized[i] = (abs_weights[i] - minimum) / (maximum - minimum)  # zi = (xi – min(x)) / (max(x) – min(x))
         return normalized
 
-    def show_image_mask_spectrogram(self, label, positive_only=True, negative_only=False, hide_rest=True, num_features=5, min_weight=0., save_path=None):
+    def show_image_mask_spectrogram(self, label, positive_only=True, negative_only=False, hide_rest=True, num_features=5, min_weight=0., save_path=None, show_colors=False):
         """
         This only works for spectral decomposition!
         # TODO: implement check if spectral decomposition is selected (probably via self.factorization.argument)
@@ -189,7 +189,7 @@ class CoughExplanation(object):
         marked = mark_boundaries(spec_db, mask)
         plt.imshow(marked[:, :, 2], origin="lower", cmap=plt.get_cmap("magma"))
         plt.colorbar(format='%+2.0f dB')
-        if not (negative_only or positive_only):
+        if show_colors:
             normalized_weights = self.normalize(weights)
             for index, comp in enumerate(indices_comp):
                 image_array = np.ones(np.shape(mask) + (4,))
@@ -232,6 +232,7 @@ class CoughExplanation(object):
         if save_path is not None:
             plt.savefig(save_path)
         plt.show()
+        plt.close()
 
 
 class LimeCoughExplainer(object):

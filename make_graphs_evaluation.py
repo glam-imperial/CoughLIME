@@ -43,7 +43,7 @@ def make_graph(comps, values, save_path, plot_dev=False, dev=None):
 
     plt.plot(comps, values[0, :], 'r', label='Most relevant first flipped')
     plt.plot(comps, values[1, :], 'b', label='Random components flipped')
-    plt.title("Temporal: percentage of predictions leading to\nsame class for k out of 7 flipped components")  # TODO: adapt
+    plt.title("Spectral: averaged percentage of predictions leading\nto same class for k out of 7 components")  # TODO: adapt
     plt.xticks(comps)
     ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
     plt.xlabel("Number of components")
@@ -103,8 +103,8 @@ def significance_analysis(comps, path):
 
 
 if __name__ == "__main__":
-    components = [1, 2, 3, 4, 5, 6]
-    path_text_files = '/Users/anne/PycharmProjects/LIME_cough/eval/'  # TODO: adapt
-    make_single_graph(components, path_text_files)
-    # significance_analysis(components, path_text_files)
+    components = [1, 3, 5, 7]
+    path_text_files = '/Users/anne/PycharmProjects/LIME_cough/old_evals/spectral_5_runs'  # TODO: adapt
+    # make_single_graph(components, path_text_files)
+    significance_analysis(components, path_text_files)
     print('All done :) ')

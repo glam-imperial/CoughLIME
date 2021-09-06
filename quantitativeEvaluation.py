@@ -5,18 +5,27 @@ from pathlib import Path
 import pandas as pd
 import lime_cough
 from temporal_segmentation import TemporalSegmentation
+from spectral_segmentation import SpectralSegmentation
+from loudness_decomposition import LoudnessDecomposition
 import soundfile
 import random
 import predict_dicova
 
 
-def get_explanation(audio, total_components):
-    factorization = TemporalSegmentation(audio, total_components)
+def get_explanation(audio, total_components=None, sr=None, decomp_type='temporal'):
+    if decomp_type == 'temporal':
+        factorization = TemporalSegmentation(audio, total_components)
+    elif decomp_type == 'spectral':
+        factorization = SpectralSegmentation(audio, sr, total_components)
+    elif decomp_type == 'loudness':
+        factorization = LoudnessDecomposition(audio, sr)
+    else:
+        print("Error: decomposition type not recognized")
     explainer = lime_cough.LimeCoughExplainer()
     explanation = explainer.explain_instance(segmentation=factorization,
                                              classifier_fn=predict_dicova.predict,
                                              labels=[0],
-                                             num_samples=64,
+                                             num_samples=128,
                                              batch_size=16,
                                              )
     return explanation, factorization
@@ -42,7 +51,7 @@ def save_mix(explanation, num_components, filename, factorization, sample_rate, 
         soundfile.write(path_name_write, random_audio, sample_rate)
 
 
-def save_predictions_explanations(components, total_components):
+def save_predictions_explanations(components, total_components, decomp_type='temporal'):
     # for each audio file
     # make directory for the number of components if not exists
     file_names = []
@@ -78,9 +87,8 @@ def save_predictions_explanations(components, total_components):
             predictions_entire_file.append(prediction_overall)
 
             # get explanation
-            fs = librosa.get_samplerate(path_file)
-            audio, _ = librosa.load(path_file, sr=fs)
-            explanation, factorization = get_explanation(audio, total_components)
+            audio, fs = librosa.load(path_file)
+            explanation, factorization = get_explanation(audio, total_components, sr=fs, decomp_type=decomp_type)
 
             # get mixes for top_components and save them
             for index, num_components in enumerate(components):
@@ -108,7 +116,7 @@ def save_predictions_explanations(components, total_components):
         summary_df.to_csv(path_csv)
 
 
-def evaluate_data(components, run):
+def evaluate_data(components, run=0):
     for num_components in components:
         path_df = f'./quantitative_evaluation/{num_components}_components/summary.csv'
         df = pd.read_csv(path_df)
@@ -148,12 +156,13 @@ def evaluate_data(components, run):
             summary.write(f"Percentage of random true predictions: {percentage_rand}")
 
 
-def perform_quantitative_analysis():
-    components = [1, 3, 5, 7]
+def perform_quantitative_analysis(components, decomp='temporal'):
     total_components = 7
     new_directory_name = './quantitative_evaluation'
     Path(new_directory_name).mkdir(parents=True, exist_ok=True)
-    save_predictions_explanations(components, total_components)
+    save_predictions_explanations(components, total_components, decomp_type=decomp)
+    new_directory_name = f'./quantitative_evaluation/output_run_0'
+    Path(new_directory_name).mkdir(parents=True, exist_ok=True)
     evaluate_data(components)
 
 

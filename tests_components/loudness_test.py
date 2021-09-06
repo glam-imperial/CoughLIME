@@ -33,11 +33,22 @@ if __name__ == '__main__':
 
     win_len_sec = 0.2
     power_db = compute_power_db(x, win_len_sec=win_len_sec, Fs=Fs)
-
-    libfmp.b.plot_signal(x, Fs=Fs, ylabel='Amplitude')
-    plt.show()
-
-    libfmp.b.plot_signal(power_db, Fs=Fs, ylabel='Power (dB)', color='red')
-    plt.ylim([70, 110])
+    print(np.min(power_db), np.max(power_db))
+    print(len(x), len(power_db))
+    lines = [0, 10000, 25000, 30000, 45000, 70000, np.size(x)]
+    fig, (ax1, ax2) = plt.subplots(2)
+    fig.suptitle('Loudness decomposition')
+    ax1.plot(x, color='c')
+    for line in lines:
+        ax1.axvline(x=line, color='m')
+    ax1.set(ylabel='Amplitude', xlim=[0, np.size(x)])
+    for i in range(0, len(lines) - 1, 2):
+        ax1.axvspan(lines[i], lines[i+1], facecolor='m', alpha=0.1)
+    ax2.plot(power_db, color='c')
+    for line in lines:
+        ax2.axvline(x=line, color='m')
+    ax2.set(xlabel='Time', ylabel='Power (db)', xlim=[0, np.size(x)])
+    for i in range(0, len(lines) - 1, 2):
+        ax2.axvspan(lines[i], lines[i+1], facecolor='m', alpha=0.1)
     plt.show()
     print(power_db)
