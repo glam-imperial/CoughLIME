@@ -25,7 +25,7 @@ def make_graph(comps, values, save_path):
         plt.plot(c, values[1, index], 'bo')
     plt.plot(comps, values[0, :], 'r', label='Explanations')
     plt.plot(comps, values[1, :], 'b', label='Random components')
-    plt.title("Temporal: averaged percentage per k out of 7 components over 10 runs")  # TODO: adapt
+    plt.title("Loudness: percentage per k out of 2 components")  # TODO: adapt
     plt.xticks(comps)
     ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
     plt.xlabel("Number of components")
@@ -104,8 +104,8 @@ def significance_analysis(comps, path):
 
 
 if __name__ == "__main__":
-    components = [1, 3, 5, 7]
-    path_text_files = '/Users/anne/PycharmProjects/LIME_cough/old_eval/temporal_significance_5_runs/quantitative_evaluation'  # TODO: adapt
-    # make_single_graph(components, path_text_files)
-    significance_analysis(components, path_text_files)
+    components = [1, 2]  # TODO: adapt
+    path_text_files = '/Users/anne/PycharmProjects/LIME_cough/old_evals/loudness_2_comp/quantitative_evaluation/output_run_0'  # TODO: adapt
+    make_single_graph(components, path_text_files)
+    # significance_analysis(components, path_text_files) # TODO: adapt
     print('All done :) ')

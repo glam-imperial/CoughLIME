@@ -41,9 +41,9 @@ def make_graph(comps, values, save_path, plot_dev=False, dev=None):
                      xytext=(0, 5),
                      ha='center')
 
-    plt.plot(comps, values[0, :], 'r', label='Most relevant first flipped')
-    plt.plot(comps, values[1, :], 'b', label='Random components flipped')
-    plt.title("Spectral: averaged percentage of predictions leading\nto same class for k out of 7 components")  # TODO: adapt
+    plt.plot(comps, values[0, :], 'r', label='Most relevant components')
+    plt.plot(comps, values[1, :], 'b', label='Random components')
+    plt.title("Loudness: percentage of predictions leading\nto same class for k components")  # TODO: adapt
     plt.xticks(comps)
     ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
     plt.xlabel("Number of components")
@@ -73,7 +73,7 @@ def calculate_std_var(exps, comp, path):
 def make_single_graph(components, path_text_files):
     percentages = np.zeros((2, len(components)))
     for i, comp in enumerate(components):
-        summary_path = f"{path_text_files}/{comp}_removed_components.txt" # TODO:adapt
+        summary_path = f"{path_text_files}/{comp}_components.txt" # TODO:adapt
         exp, rand = extract_data(summary_path)
         percentages[0, i] = exp
         percentages[1, i] = rand
@@ -103,8 +103,8 @@ def significance_analysis(comps, path):
 
 
 if __name__ == "__main__":
-    components = [1, 3, 5, 7]
-    path_text_files = '/Users/anne/PycharmProjects/LIME_cough/old_evals/spectral_5_runs'  # TODO: adapt
-    # make_single_graph(components, path_text_files)
-    significance_analysis(components, path_text_files)
+    components = [1, 2]  # TODO: adapt
+    path_text_files = '/Users/anne/PycharmProjects/LIME_cough/old_evals/loudness_2_comp/quantitative_evaluation/output_run_0'  # TODO: adapt
+    make_single_graph(components, path_text_files)  # TODO: adapt
+    # significance_analysis(components, path_text_files)
     print('All done :) ')
