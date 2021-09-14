@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 
 class LoudnessDecomposition(object):
-    def __init__(self, audio, fs, threshold=60):
+    def __init__(self, audio, fs, threshold=75):
         """audio: np array, (n,) for mono; (n, 2) for stereo"""
         self.audio = audio
         self.fs = fs

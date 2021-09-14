@@ -123,8 +123,8 @@ class CoughExplanation(object):
 
     def normalize(self, weights):
         abs_weights = np.abs(np.array(weights))
-        minimum = min(abs_weights) - 0.1 * max(abs_weights)
-        maximum = max(abs_weights) + 0.1  * max(abs_weights)
+        minimum = min(abs_weights) - 0.2 * max(abs_weights)
+        maximum = max(abs_weights) + 0.4 * max(abs_weights)
         normalized = np.zeros(np.shape(abs_weights))
         for i, w in enumerate(abs_weights):
             normalized[i] = (abs_weights[i] - minimum) / (maximum - minimum)  # zi = (xi – min(x)) / (max(x) – min(x))

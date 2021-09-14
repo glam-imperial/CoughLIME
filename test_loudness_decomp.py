@@ -31,12 +31,12 @@ if __name__ == '__main__':
     warnings.filterwarnings("ignore", message="Trying to unpickle estimator LogisticRegression from version 0.24.1 when using version 0.24.2. This might lead to breaking code or invalid results. Use at your own risk.")
 
     """test on single file"""
-    # test_single_file()
+    test_single_file()
 
     """quantitative evaluation as in audiolime"""
     # make folder for results of quantitative analysis
-    comp = [1, 3]
-    quantitativeEvaluation.perform_quantitative_analysis(comp, decomp='loudness')
+    # audio_directory_str = '/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release/AUDIO'
+    # quantitativeEvaluation.perform_quantitative_analysis(audio_directory_str, decomp='loudness')
     # significance analysis
     # total_runs = 5
     # quantitativeEvaluation.significance_tests(total_runs)

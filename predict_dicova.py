@@ -62,8 +62,8 @@ def predict_single_audio(audio_path):
     file_model = open(path_model, 'rb')
     rf_model = pickle.load(file_model)
 
-    sample_rate = librosa.get_samplerate(audio_path)
-    audio_array, _ = librosa.load(audio_path, sr=sample_rate)
+    # sample_rate = librosa.get_samplerate(audio_path)
+    audio_array, _ = librosa.load(audio_path)
 
     # this line is the problem why librosa outputs nan
     if np.max(np.abs(audio_array)) != 0:

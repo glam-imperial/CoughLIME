@@ -42,4 +42,4 @@ if __name__ == '__main__':
     # quantitativeEvaluation.significance_tests(total_runs)
 
     """pixel flipping"""
-    # pixelFlipping.main_pixel_flipping(7, 'temporal', './eval/', '/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release/AUDIO/', 200)
+    pixelFlipping.main_pixel_flipping(7, 'temporal', './eval/', '/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release/AUDIO/', 200)
