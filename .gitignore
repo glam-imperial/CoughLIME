@@ -6,4 +6,4 @@ old_evals/*
 eval/*
 figures/*
 *.csv
-
+sonification/*
