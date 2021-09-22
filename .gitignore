@@ -7,3 +7,4 @@ eval/*
 figures/*
 *.csv
 sonification/*
+cider/*
