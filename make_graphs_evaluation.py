@@ -4,6 +4,7 @@ import re
 import statistics
 import os
 import matplotlib.ticker as mtick
+import dAUC
 
 
 def extract_data(summary_path):
@@ -17,7 +18,7 @@ def extract_data(summary_path):
     return percentage_exp, percentage_rand
 
 
-def make_graph(comps, values, save_path, plot_dev=False, dev=None, mode='random'):
+def make_graph(comps, values, save_path, plot_dev=False, dev=None, mode='random', dAUC=None):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     plt.subplots_adjust(wspace=0.6, hspace=0.6, left=0.15, bottom=0.1, right=0.96, top=0.9)
@@ -29,13 +30,6 @@ def make_graph(comps, values, save_path, plot_dev=False, dev=None, mode='random'
             elif mode == 'random':
                 print(dev[index])
                 plt.errorbar(c, values[1, index], dev[index], marker='.', color='b')
-        plt.plot(c, values[0, index], 'r.')
-        label = "{:.2f}".format(values[0, index])
-        plt.annotate(label,
-                     (c, values[0, index]),
-                     textcoords="offset points",
-                     xytext=(0, 5),
-                     ha='center')
         plt.plot(c, values[1, index], 'b.')
         label = "{:.2f}".format(values[1, index])
         plt.annotate(label,
@@ -43,13 +37,23 @@ def make_graph(comps, values, save_path, plot_dev=False, dev=None, mode='random'
                      textcoords="offset points",
                      xytext=(0, 5),
                      ha='center')
-
-    plt.plot(comps, values[0, :], 'r', label='Most relevant components')
-    plt.plot(comps, values[1, :], 'b', label='Random components')
-    plt.title("Loudness: percentage of predictions leading\nto same class for given percentage of flipped components")  # TODO: adapt
+        plt.plot(c, values[0, index], 'r.')
+        label = "{:.2f}".format(values[0, index])
+        plt.annotate(label,
+                     (c, values[0, index]),
+                     textcoords="offset points",
+                     xytext=(0, 5),
+                     ha='center')
+    plt.plot(comps, values[1, :], 'b', label='Random components flipped')
+    plt.plot(comps, values[0, :], 'r', label='Most relevant components flipped first')
+    if dAUC is not None:
+        # need to color the area in between the curves and add the dauc value to the plot
+        lbl = f"Delta-Area Under Curve = {round(dAUC, 4)}"
+        plt.fill_between(comps, values[0, :], values[1, :], color='mediumpurple', alpha=0.5, label=lbl)
+    plt.title("Loudness: percentage of predictions leading to same\nclass for k % flipped components")  # TODO: adapt
     plt.xticks(comps)
     ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
-    plt.xlabel("Percentage of components flipped to 0")
+    plt.xlabel("Percentage of flipped components")
     plt.ylabel("Percentage of same predictions")
     plt.legend()
     plt.savefig(f'{save_path}/summary_plot_average.png')
@@ -73,15 +77,18 @@ def calculate_std_var(exps, comp, path):
     return deviations
 
 
-def make_single_graph(components, path_text_files):
+def make_single_graph(components, path_text_files, dauc=True):
     percentages = np.zeros((2, len(components)))
     for i, comp in enumerate(components):
-        summary_path = f"{path_text_files}/{comp}_components.txt"  # TODO:adapt
+        summary_path = f"{path_text_files}/{comp}_removed_components.txt"  # TODO:adapt
         exp, rand = extract_data(summary_path)
         percentages[0, i] = exp
         percentages[1, i] = rand
-
-    make_graph(components, percentages, path_text_files)
+    if dauc:
+        dauc = dAUC.main(components, path_text_files)
+        make_graph(components, percentages, path_text_files, dAUC=dauc)
+    else:
+        make_graph(components, percentages, path_text_files, dAUC=None)
 
 
 def get_significance_metrics(exp, rand, comps, path_to_save):
@@ -105,7 +112,6 @@ def best_performing(exps, rands, comps, path_to_save):
 
 
 def significance_analysis(comps, path, stddev='random'):
-    # this includes std dev for explanations, but not for random components
     runs = 5
     explanations = np.zeros((len(comps), runs))
     randoms = np.zeros((len(comps), runs))
@@ -120,8 +126,8 @@ def significance_analysis(comps, path, stddev='random'):
 
 
 if __name__ == "__main__":
-    components = [0.1, 0.25, 0.5, 0.75, 1]  # TODO: adapt
-    path_text_files = '/Users/anne/PycharmProjects/LIME_cough/old_evals/Loudness/09_14_pixel_flipping_relative/quantitative_evaluation'  # TODO: adapt
-    make_single_graph(components, path_text_files)  # TODO: adapt
+    components = [0, 0.1, 0.25, 0.5, 0.75, 0.9]  # TODO: adapt
+    path_text_files = '/Users/anne/PycharmProjects/LIME_cough/old_evals/Loudness/09_15_pixel_flipping/eval'  # TODO: adapt
+    make_single_graph(components, path_text_files, dauc=True)  # TODO: adapt
     # significance_analysis(components, path_text_files, stddev='random')
     print('All done :) ')

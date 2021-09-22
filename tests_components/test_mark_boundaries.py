@@ -10,14 +10,14 @@ import pylab
 if __name__ == "__main__":
     # load an audio array and get its segmentation
     # make an exemplary mask and display the outcome
-    filename = 'AtACyGlV_cough.flac'
+    filename = 'iyWdhFuN_cough.flac'
     audio_path = f'/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release/AUDIO/{filename}'
     audio, sample_rate = librosa.load(audio_path)
     segmentation = spectral_segmentation.SpectralSegmentation(audio, sample_rate, 7)
     indices = [0, 1, 2, 3, 4, 5, 6]
     spectrogram = segmentation.return_spectrogram_indices(indices)
     spec_db = librosa.power_to_db(spectrogram, ref=np.max)
-    mask = segmentation.return_mask_boundaries([0, 4], [2])
+    mask = segmentation.return_mask_boundaries([0, 1, 2, 3, 4, 5, 6], [])
     marked = mark_boundaries(spec_db, mask)
     plt.imshow(marked[:, :, 2], origin="lower", cmap=plt.get_cmap("magma"))
     plt.colorbar(format='%+2.0f dB')
@@ -32,13 +32,14 @@ if __name__ == "__main__":
     image_array[:, :, 1] = mask_negative_green
     image_array[:, :, 2] = mask_negative
     image_array[:, :, 3] = np.abs(mask)
-    plt.imshow(image_array, origin="lower", interpolation="nearest", alpha=0.5)  # set opacity with alpha value
+    # plt.imshow(image_array, origin="lower", interpolation="nearest", alpha=0.5)  # set opacity with alpha value
     plt.savefig("./spec.png")
     plt.xlabel("Time")
-    plt.ylabel("Frequency'")
+    plt.ylabel("Frequency")
     ax = plt.gca()
     ax.axes.xaxis.set_ticks([])
     ax.axes.yaxis.set_ticks([])
-    plt.title("Most important components for local\nprediction of class COVID-positive")
+    plt.title("Spectral Decomposition into 7 Components")
+    plt.savefig("./test_spectral.png")
     plt.show()
     print("done")

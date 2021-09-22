@@ -7,21 +7,17 @@ import quantitativeEvaluation
 
 
 def test_single_file():
-    audio_path = '/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release/AUDIO/iyWdhFuN_cough.flac'
-    predicted_entire = predict_dicova.predict_single_audio(audio_path)
+    filename = 'rAKaNjve_cough.flac'
+    audio_path = f'/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release/AUDIO/{filename}'
     # TODO: adapt
     audio, sr = librosa.load(audio_path)
     explanation, factorization = quantitativeEvaluation.get_explanation(audio, sr=sr, decomp_type='loudness')
-    factorization.visualize_decomp(save_path='./figures/loudness_test.png')
-    """filename = 'loudness_testxyz'
-    quantitativeEvaluation.save_mix(explanation, 3, filename, factorization, sr, gen_random=False)
-    path_name = f"./test/{filename[:-5]}_e.wav"
-    prediction_exp = predict_dicova.predict_single_audio(path_name)
-    print(predicted_entire)
-    print(prediction_exp)
-    figure = explanation.as_pyplot_figure()
-    figure.show()
-    figure.savefig('./explanation.png')"""
+    # factorization.visualize_decomp(save_path='./figures/loudness_test.png')
+    print("Segments", factorization.get_number_segments())
+    path_name = f"./sonification/{filename[:-5]}_e_3_comp.wav"
+    quantitativeEvaluation.save_mix(explanation, 3, path_name, factorization, sr, gen_random=False)
+    path_name = f"./sonification/{filename[:-5]}_e_1_comp.wav"
+    quantitativeEvaluation.save_mix(explanation, 1, path_name, factorization, sr, gen_random=False)
 
 
 if __name__ == '__main__':
@@ -41,5 +37,8 @@ if __name__ == '__main__':
     # total_runs = 5
     # quantitativeEvaluation.significance_tests(total_runs)
 
+    data_path = '/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release/AUDIO/'
+    lists = '/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release/LISTS/val_fold_1.txt'
+
     """pixel flipping"""
-    # pixelFlipping.main_pixel_flipping(7, 'temporal', './eval/', '/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release/AUDIO/', 200)
+    # pixelFlipping.main_pixel_flipping('loudness', './eval/', data_path, 128, list_files=lists)

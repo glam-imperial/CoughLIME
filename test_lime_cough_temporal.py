@@ -7,14 +7,15 @@ import quantitativeEvaluation
 
 
 def test_single_file():
-    audio_path = '/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release/AUDIO/AtACyGlV_cough.flac'
+    audio_path = '/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release/AUDIO/iyWdhFuN_cough.flac'
     predicted_entire = predict_dicova.predict_single_audio(audio_path)
     # TODO: adapt
     fs = librosa.get_samplerate(audio_path)
     audio, _ = librosa.load(audio_path, sr=fs)
     total_components = 7
     explanation, factorization = quantitativeEvaluation.get_explanation(audio, total_components)
-    filename = '1_test12344'
+    factorization.visualize_decomp(save_path='./figures/temporal_decomp.png')
+    """filename = '1_test12344'
     quantitativeEvaluation.save_mix(explanation, 3, filename, factorization, fs, gen_random=False)
     path_name = f"./test/{filename[:-5]}_e.wav"
     prediction_exp = predict_dicova.predict_single_audio(path_name)
@@ -22,7 +23,7 @@ def test_single_file():
     print(prediction_exp)
     figure = explanation.as_pyplot_figure()
     figure.show()
-    figure.savefig('./explanation.png')
+    figure.savefig('./explanation.png')"""
 
 
 if __name__ == '__main__':
@@ -42,4 +43,4 @@ if __name__ == '__main__':
     # quantitativeEvaluation.significance_tests(total_runs)
 
     """pixel flipping"""
-    pixelFlipping.main_pixel_flipping(7, 'temporal', './eval/', '/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release/AUDIO/', 200)
+    # pixelFlipping.main_pixel_flipping(7, 'temporal', './eval/', '/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release/AUDIO/', 200)

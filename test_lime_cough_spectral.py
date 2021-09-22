@@ -7,6 +7,7 @@ import predict_dicova
 import time
 import quantitativeEvaluation
 import pixelFlipping
+from spectral_segmentation import SpectralSegmentation
 
 
 def test_single_file():
@@ -28,8 +29,8 @@ def test_single_file():
     weighted_audio = explanation.weighted_audio(0, positive_components=True, negative_components=True, num_components=3)
     path_name = f"./spectral_tests/{new_filename[:-5]}_3_weighted.wav"
     soundfile.write(path_name, weighted_audio, fs)
-    # explanation.show_image_mask_spectrogram(0, positive_only=True, negative_only=False, hide_rest=True, num_features=3, min_weight=0., save_path='./tests_components/mel_pos_hide.png')
-    # explanation.show_image_mask_spectrogram(0, positive_only=False, negative_only=False, hide_rest=True, num_features=3, min_weight=0., save_path='./tests_components/mel_both_hide.png')
+    explanation.show_image_mask_spectrogram(0, positive_only=True, negative_only=False, hide_rest=True, num_features=3, min_weight=0., save_path='./tests_components/mel_pos_hide.png')
+    explanation.show_image_mask_spectrogram(0, positive_only=False, negative_only=False, hide_rest=True, num_features=3, min_weight=0., save_path='./tests_components/mel_both_hide.png')
     explanation.show_image_mask_spectrogram(0, positive_only=True, negative_only=False, hide_rest=False, num_features=3, min_weight=0., save_path='./tests_components/mel_pos_show.png', show_colors=True)
     explanation.show_image_mask_spectrogram(0, positive_only=False, negative_only=False, hide_rest=False, num_features=3, min_weight=0., save_path='./tests_components/mel_both_show.png', show_colors=True)
     end = time.time()

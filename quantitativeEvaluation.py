@@ -33,14 +33,17 @@ def get_explanation(audio, total_components=None, sr=None, decomp_type='temporal
     return explanation, factorization
 
 
-def save_mix(explanation, num_components, filename, factorization, sample_rate, gen_random=False):
+def save_mix(explanation, num_components, save_path, factorization, sample_rate, gen_random=False):
     label = list(explanation.local_exp.keys())[0]
     audio, component_indeces = explanation.get_exp_components(label, positive_components=True,
                                                               negative_components=True,
                                                               num_components=num_components,
                                                               return_indeces=True)
     # num components: how many components should model take for explanations
-    path_name_write = f"./quantitative_evaluation/{num_components}_components/explanations/{filename[:-5]}_e.wav"
+    if save_path[:2] == './':
+        path_name_write = save_path
+    else:
+        path_name_write = f"./quantitative_evaluation/{num_components}_components/explanations/{save_path[:-5]}_e.wav"
     soundfile.write(path_name_write, audio, sample_rate)
     print("Indices", component_indeces)
     if gen_random:

@@ -54,10 +54,8 @@ class LoudnessDecomposition(object):
         temp = np.array([])
         for index, value in enumerate(mask):
             if value:
-                print(self.segments[index])
                 temp = np.append(temp, np.array(self.segments[index]))
             else:
-                print(self.fudged_segments[index])
                 temp = np.append(temp, np.array(self.fudged_segments[index]))
         return temp
 
@@ -113,7 +111,7 @@ class LoudnessDecomposition(object):
         indices = [0] + self.indices_segments + [np.size(audio)]
         loudness = self.loudness
         fig, (ax1, ax2) = plt.subplots(2)
-        fig.suptitle('Loudness decomposition')
+        fig.suptitle('Loudness Decomposition')
         ax1.plot(audio, color='c')
         for line in indices:
             ax1.axvline(x=line, color='m')

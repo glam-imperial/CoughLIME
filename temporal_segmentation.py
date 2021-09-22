@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 class TemporalSegmentation(object):
@@ -53,3 +54,24 @@ class TemporalSegmentation(object):
         mask[indices] = True
         audio = self.get_segments_mask(mask)
         return audio
+
+    def visualize_decomp(self, save_path=None):
+        audio = self.audio
+        length_audio = np.shape(audio)[0]
+        distance = int(length_audio/self.num_segments)
+        indices = np.array(range(self.num_segments))
+        indices = indices * distance
+        indices = np.append(indices, [length_audio])
+        plt.plot(audio, color='c')
+        for line in indices:
+            plt.axvline(x=line, color='m')
+        plt.xlim([0, np.size(audio)])
+        plt.title(f"Temporal Decomposition into {self.num_segments} Components")
+        for i in range(0, len(indices) - 1, 2):
+            plt.axvspan(indices[i], indices[i+1], facecolor='m', alpha=0.1)
+        plt.ylabel('Amplitude')
+        plt.xlabel('Time')
+        if save_path is not None:
+            plt.savefig(save_path)
+        plt.show()
+        print("visualized :)")
