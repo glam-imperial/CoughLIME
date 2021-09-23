@@ -11,6 +11,7 @@ class SpectralSegmentation(object):
         self.audio = audio
         self.sample_rate = sample_rate
         self.segmentation_type = segmentation_type
+        self.decomposition_type = 'spectral'
         self.initialize_segments()
 
     def get_number_segments(self):
@@ -72,7 +73,7 @@ class SpectralSegmentation(object):
                 if i in positive_indices:
                     mask[(i*len_component+1):((i+1)*len_component-1), 1:-1] = 1
                 elif i in negative_indices:
-                    mask[(i*len_component+1):((i+1)*len_component-1), 1:-1] = 2
+                    mask[(i*len_component+1):((i+1)*len_component-1), 1:-1] = -1
         else:
             len_component = int(128 / self.num_segments + 1)
             for i in range(self.num_segments - 1):

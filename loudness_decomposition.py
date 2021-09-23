@@ -11,21 +11,17 @@ class LoudnessDecomposition(object):
         self.audio = audio
         self.fs = fs
         self.threshold = threshold
+        self.decomposition_type = 'loudness'
         # segments are stored in (n, 1, num_segments)
         self.num_segments, self.segments, self.indices_segments, self.loudness = self.initialize_segments()
         self.fudged_segments = self.initialize_fudged_segments()
-        """to init
-        self.num_segments
-        self.segments
-        self.fudged_segments
-        """
 
     def get_number_segments(self):
         return self.num_segments
 
     def initialize_segments(self):
         audio = self.audio
-        indices_min, loudness = self.get_loudness_indices()  # np.array: indices local minima (not the first and last el)
+        indices_min, loudness = self.get_loudness_indices()
         temp_segments = []
         previous = 0
         current_index = 0
@@ -59,11 +55,25 @@ class LoudnessDecomposition(object):
                 temp = np.append(temp, np.array(self.fudged_segments[index]))
         return temp
 
-    def return_segments(self, indices):
+    def get_loudness_segments(self, mask):
+        # TODO: check if this works!
+        temp = np.array([])
+        indices = [0] + self.indices_segments + [np.size(self.audio)]
+        for index, value in enumerate(mask):
+            if value:
+                temp = np.append(temp, np.array(self.loudness[indices[index]:indices[index+1]]))
+            else:
+                temp = np.append(temp, np.array(self.fudged_segments[index]))
+        return temp
+
+    def return_segments(self, indices, loudness=False):
         # make mask setting true for indices
         mask = np.zeros((self.num_segments,)).astype(bool)
         mask[indices] = True
         audio = self.get_segments_mask(mask)
+        if loudness:
+            loudness = self.get_loudness_segments(mask)
+            return audio, loudness
         return audio
 
     def get_loudness_indices(self):
@@ -100,11 +110,19 @@ class LoudnessDecomposition(object):
         win_len = round(win_len_sec * self.fs)
         win = np.ones(win_len) / win_len
         power_db = 10 * np.log10(np.convolve(self.audio**2, win, mode='same') / power_ref)
-        """s = np.abs(librosa.stft(self.audio))
-        power_db = librosa.power_to_db(s**2, ref=power_ref)"""
         power_db[np.where(power_db == -np.inf)] = 0
         power_db = np.abs(power_db)
         return power_db
+
+    def return_mask_boundaries(self, positive_indices, negative_indices):
+        mask = np.zeros(np.shape(self.audio), dtype=np.byte)
+        indices = [0] + self.indices_segments + [np.size(self.audio)]
+        for i in range(len(indices) - 1):
+            if i in positive_indices:
+                mask[indices[i] + 1:indices[i + 1] - 1] = 1
+            elif i in negative_indices:
+                mask[indices[i] + 1:indices[i + 1] - 1] = -1
+        return mask
 
     def visualize_decomp(self, save_path=None):
         audio = self.audio

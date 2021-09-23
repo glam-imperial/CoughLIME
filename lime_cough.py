@@ -10,6 +10,7 @@ from tqdm.auto import tqdm
 import librosa
 import matplotlib.pyplot as plt
 from skimage.segmentation import mark_boundaries
+import matplotlib.patches as mpatches
 
 
 from lime import lime_base
@@ -148,6 +149,12 @@ class CoughExplanation(object):
             min_weight: minimum weight of the superpixels to include in explanation
             save_path: path under which to save the obtained image for the explanation
         """
+        if self.segmentation.decomposition_type == 'spectral':
+            self.image_spectral(label, positive_only=positive_only, negative_only=negative_only, hide_rest=hide_rest, num_features=num_features, min_weight=min_weight, save_path=save_path, show_colors=show_colors)
+        elif self.segmentation.decomposition_type == 'loudness':
+            self.image_loudness(label, positive_only=positive_only, negative_only=negative_only, hide_rest=hide_rest, num_features=num_features, min_weight=min_weight, save_path=save_path, show_colors=show_colors)
+
+    def get_indices(self, label, positive_only=True, negative_only=False, hide_rest=True, num_features=5, min_weight=0.):
         if label not in self.local_exp:
             raise KeyError('Label not in explanation')
         if positive_only and negative_only:
@@ -165,9 +172,9 @@ class CoughExplanation(object):
             mask = segmentation.return_mask_boundaries([], indices_comp)
         if positive_only or negative_only:
             if hide_rest:
-                spectrogram_indices = indices_comp
+                indices_show = indices_comp
             else:
-                spectrogram_indices = range(segmentation.get_number_segments())
+                indices_show = range(segmentation.get_number_segments())
         else:
             comp_pos, comp_neg = [], []
             indices_comp, weights = [], []
@@ -180,11 +187,29 @@ class CoughExplanation(object):
                     comp_neg.append(x[0])
             mask = segmentation.return_mask_boundaries(comp_pos, comp_neg)
             if hide_rest:
-                spectrogram_indices = comp_pos + comp_neg
+                indices_show = comp_pos + comp_neg
             else:
-                spectrogram_indices = range(segmentation.get_number_segments())
+                indices_show = range(segmentation.get_number_segments())
+        return indices_show, indices_comp, mask, weights
 
-        spectrogram = segmentation.return_spectrogram_indices(spectrogram_indices)
+    def make_masked_image(self, mask):
+        image = np.ones(np.shape(mask) + (4,))
+        mask_negative = np.zeros(np.shape(mask))
+        mask_negative[np.where(mask == 0)] = 1
+        mask_negative_green = np.ones(np.shape(mask))
+        mask_negative_green[np.where(mask == -1)] = 0
+        mask_negative_red = np.ones(np.shape(mask))
+        mask_negative_red[np.where(mask == 1)] = 0
+        image[:, :, 0] = mask_negative_red #0 for red, 1 for green
+        image[:, :, 1] = mask_negative_green
+        image[:, :, 2] = mask_negative
+        image[:, :, 3] = np.abs(mask)
+        return image
+
+    def image_spectral(self, label, positive_only=True, negative_only=False, hide_rest=True, num_features=5, min_weight=0., save_path=None, show_colors=False):
+        spectrogram_indices, indices_comp, mask, weights = self.get_indices(label, positive_only=positive_only, negative_only=negative_only, hide_rest=hide_rest, num_features=num_features, min_weight=min_weight)
+
+        spectrogram = self.segmentation.return_spectrogram_indices(spectrogram_indices)
         spec_db = librosa.power_to_db(spectrogram, ref=np.max)
         marked = mark_boundaries(spec_db, mask)
         plt.imshow(marked[:, :, 2], origin="lower", cmap=plt.get_cmap("magma"))
@@ -192,37 +217,13 @@ class CoughExplanation(object):
         if show_colors:
             normalized_weights = self.normalize(weights)
             for index, comp in enumerate(indices_comp):
-                image_array = np.ones(np.shape(mask) + (4,))
                 if weights[index] < 0:
-                    mask = segmentation.return_mask_boundaries([], [comp])
+                    mask = self.segmentation.return_mask_boundaries([], [comp])
                 else:
-                    mask = segmentation.return_mask_boundaries([comp], [])
-                mask_negative = np.zeros(np.shape(mask))
-                mask_negative[np.where(mask == 0)] = 1
-                mask_negative_green = np.ones(np.shape(mask))
-                mask_negative_green[np.where(mask == -1)] = 0
-                mask_negative_red = np.ones(np.shape(mask))
-                mask_negative_red[np.where(mask == 1)] = 0
-                image_array[:, :, 0] = mask_negative_red #0 for red, 1 for green
-                image_array[:, :, 1] = mask_negative_green
-                image_array[:, :, 2] = mask_negative
-                image_array[:, :, 3] = np.abs(mask)
+                    mask = self.segmentation.return_mask_boundaries([comp], [])
+                image_array = self.make_masked_image(mask)
                 plt.imshow(image_array, origin="lower", interpolation="nearest", alpha=normalized_weights[index])
 
-            # old starting
-            """
-            image_array = np.ones(np.shape(mask) + (4,))
-            mask_negative = np.zeros(np.shape(mask))
-            mask_negative[np.where(mask == 0)] = 1
-            mask_negative_green = np.ones(np.shape(mask))
-            mask_negative_green[np.where(mask == -1)] = 0
-            mask_negative_red = np.ones(np.shape(mask))
-            mask_negative_red[np.where(mask == 1)] = 0
-            image_array[:, :, 0] = mask_negative_red #0 for red, 1 for green
-            image_array[:, :, 1] = mask_negative_green
-            image_array[:, :, 2] = mask_negative
-            image_array[:, :, 3] = np.abs(mask)
-            plt.imshow(image_array, origin="lower", interpolation="nearest", alpha=0.5)"""
         plt.xlabel("Time")
         plt.ylabel("Frequency")
         ax = plt.gca()
@@ -233,6 +234,55 @@ class CoughExplanation(object):
             plt.savefig(save_path)
         plt.show()
         plt.close()
+
+    def image_loudness(self, label, positive_only=True, negative_only=False, hide_rest=True, num_features=5, min_weight=0., save_path=None, show_colors=False):
+        image_indices, indices_comp, mask, weights = self.get_indices(label, positive_only=positive_only, negative_only=negative_only, hide_rest=hide_rest, num_features=num_features, min_weight=min_weight)
+        # return the loudness waveform and decibels array for the corresponding image_indices
+        waveform, loudness = self.segmentation.return_segments(image_indices, loudness=True)
+        waveform[np.where(waveform == 0)] = np.nan
+        loudness[np.where(loudness == 0)] = np.nan
+        fig, (ax1, ax2) = plt.subplots(2)
+        fig.suptitle('Loudness Decomposition')
+        ax1.plot(waveform, color='c')
+        segment_indices = [0] + self.segmentation.indices_segments + [np.size(waveform)]
+        # only mark the important components!!
+        for i in indices_comp:
+            left = segment_indices[i]
+            bottom = -0.95
+            width = segment_indices[i + 1] - segment_indices[i]
+            height = 1.9
+            rect = mpatches.Rectangle((left, bottom), width, height,
+                                      fill=False,
+                                      color="purple",
+                                      linewidth=2)
+            ax1.add_patch(rect)
+        ax1.set(ylabel='Amplitude', xlim=[0, np.size(waveform)], ylim=[-1, 1])
+        ax2.plot(loudness, color='c')
+        for i in indices_comp:
+            left = segment_indices[i]
+            bottom = 1
+            width = segment_indices[i + 1] - segment_indices[i]
+            height = 148
+            rect = mpatches.Rectangle((left, bottom), width, height,
+                                      fill=False,
+                                      color="purple",
+                                      linewidth=2)
+            ax2.add_patch(rect)
+        ax2.set(xlabel='Time', ylabel='Power (db)', xlim=[0, np.size(waveform)], ylim=[0, 150])
+        if show_colors:
+            normalized_weights = self.normalize(weights)
+            for index, comp in enumerate(indices_comp):
+                if weights[index] < 0:
+                    ax1.axvspan(segment_indices[comp], segment_indices[comp+1], facecolor='red', alpha=normalized_weights[index])
+                    ax2.axvspan(segment_indices[comp], segment_indices[comp+1], facecolor='red', alpha=normalized_weights[index])
+                else:
+                    ax1.axvspan(segment_indices[comp], segment_indices[comp+1], facecolor='green', alpha=normalized_weights[index])
+                    ax2.axvspan(segment_indices[comp], segment_indices[comp+1], facecolor='green', alpha=normalized_weights[index])
+        if save_path is not None:
+            plt.savefig(save_path)
+        plt.show()
+
+        # need to mark the components, see visualize decomp for help!
 
 
 class LimeCoughExplainer(object):

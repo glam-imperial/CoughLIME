@@ -10,6 +10,7 @@ class TemporalSegmentation(object):
         self.num_segments = num_segments
         self.audio = audio
         self.segmentation_type = segmentation_type
+        self.decomposition_type = 'temporal'
         length_audio = np.shape(audio)[0]
         if length_audio % num_segments == 0:
             shape_segments = (int(length_audio/num_segments), num_segments)

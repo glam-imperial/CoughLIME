@@ -11,6 +11,7 @@ import predict_dicova
 import csv
 import sys
 import warnings
+from pathlib import Path
 
 
 def get_explanation(audio, total_components, sr, num_samples=64, factorization_type='temporal'):
@@ -95,7 +96,7 @@ def evaluate_data(comps, data_path):
     read_file.close()
 
     for index, removed in enumerate(comps):
-        path_save_summary = f"./eval/{removed}_removed_components.txt"
+        path_save_summary = f"{data_path}/{removed}_removed_components.txt"
         with open(path_save_summary, 'w') as summary:
             summary.write(f"Number samples: {number_files}")
             summary.write("\n")
@@ -146,6 +147,14 @@ def main_pixel_flipping(factorization_type, results_path, data_directory, num_sa
     output.close()
     comp = [0, 0.1, 0.25, 0.5, 0.75, 0.9]
     evaluate_data(comp, results_path)
+
+
+def significance(factorization_type, results_path, data_directory, num_samples, number_components=None, list_files=None, number_runs=5):
+    for run in range(number_runs):
+        new_directory_name = f'{results_path}/output_run_{run}'
+        Path(new_directory_name).mkdir(parents=True, exist_ok=True)
+        results = f'{results_path}/output_run_{run}'
+        main_pixel_flipping(factorization_type, results, data_directory, num_samples, number_components, list_files)
 
 
 if __name__ == '__main__':
