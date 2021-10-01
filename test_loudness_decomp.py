@@ -4,21 +4,73 @@ import warnings
 import predict_dicova
 import pixelFlipping
 import quantitativeEvaluation
+import os
+import csv
+import soundfile
 
 
 def test_single_file():
-    filename = 'rAKaNjve_cough.flac'
+    """
+    function to test a single file with the loudness decomposition
+    :return:
+    """
+    filename = 'BRdoMJMm_cough.flac'
+    type_sample = 'neg'
     audio_path = f'/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release/AUDIO/{filename}'
     # TODO: adapt
+    print(predict_dicova.predict_single_audio(audio_path))
     audio, sr = librosa.load(audio_path)
-    explanation, factorization = quantitativeEvaluation.get_explanation(audio, sr=sr, decomp_type='loudness')
-    # factorization.visualize_decomp(save_path='./figures/loudness_test.png')
-    print("Segments", factorization.get_number_segments())
-    explanation.show_image_mask_spectrogram(0, positive_only=False, negative_only=False, hide_rest=False, num_features=3, min_weight=0., save_path=None, show_colors=True)
+    explanation, decomposition = quantitativeEvaluation.get_explanation(audio, sr=sr, decomp_type='loudness', num_samples=200)
+    # decomposition.visualize_decomp(save_path='./figures/loudness_test.png')
+    saving = f'./figures/{filename[:-5]}_neg.png'
+    explanation.show_image_mask_spectrogram(0, False, False, False, 3, 0.0, saving, True, False)
+
+    # for c in [1, 3, 5]:
+    #    audio, component_indeces = explanation.get_exp_components(0, positive_components=True,
+                                                              #negative_components=True,
+                                                              #num_components=c,
+                                                              #return_indeces=True)
+        # num components: how many components should model take for explanations
+    #    path_name_write = f"./sonification/paper/{filename}_{type_sample}_top{c}_loudness.wav"
+    #    soundfile.write(path_name_write, audio, sr)
+    path = f'./figures/paper /decomp_{filename}.png'
+    decomposition.visualize_decomp(save_path=path)
+    # explanation.show_image_mask_spectrogram(0, positive_only=False, negative_only=False, hide_rest=False, num_features=3, min_weight=0., save_path=path, show_colors=True)
     # path_name = f"./sonification/{filename[:-5]}_e_3_comp.wav"
-    # quantitativeEvaluation.save_mix(explanation, 3, path_name, factorization, sr, gen_random=False)
+    # quantitativeEvaluation.save_mix(explanation, 3, path_name, decomposition, sr, gen_random=False)
     # path_name = f"./sonification/{filename[:-5]}_e_1_comp.wav"
-    # quantitativeEvaluation.save_mix(explanation, 1, path_name, factorization, sr, gen_random=False)
+    # quantitativeEvaluation.save_mix(explanation, 1, path_name, decomposition, sr, gen_random=False)
+
+
+def test_figures():
+    # file_list = get_loudness_list()
+    data_directory = '/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release/AUDIO'
+    # audio_directory = os.fsencode(data_directory)
+    with open('./figures/pos_neg/negative_options') as f:
+        files_to_process = [line.rstrip() for line in f]
+    for file in files_to_process:  # os.listdir(audio_directory):
+        # filename = os.fsdecode(file)
+        print("Starting with... ", file)
+        path_file = f'{data_directory}/{file}.flac'
+        audio, sr = librosa.load(path_file)
+        explanation, decomposition = quantitativeEvaluation.get_explanation(audio, sr=sr, decomp_type='loudness', num_samples=200)
+        decomposition.visualize_decomp()
+        print("Segments", decomposition.get_number_components())
+        saving = f'./figures/pos_neg/{file}_neg.png'
+        explanation.show_image_mask_spectrogram(0, positive_only=False, negative_only=False, hide_rest=False, num_features=3, min_weight=0., save_path=saving, show_colors=True, show_loudness=False)
+        print("done")
+
+
+def get_loudness_list():
+    res = []
+    data = '/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release/metadata.csv'
+    read_file = open(data, 'r')
+    csv_reader = csv.reader(read_file)
+    _ = next(csv_reader)
+    for row in csv_reader:
+        if row[1] == 'p':
+            res.append(row[0])
+    return res
 
 
 if __name__ == '__main__':
@@ -28,7 +80,7 @@ if __name__ == '__main__':
     warnings.filterwarnings("ignore", message="Trying to unpickle estimator LogisticRegression from version 0.24.1 when using version 0.24.2. This might lead to breaking code or invalid results. Use at your own risk.")
 
     """test on single file"""
-    # test_single_file()
+    test_single_file()
 
     """quantitative evaluation as in audiolime"""
     # make folder for results of quantitative analysis
@@ -40,7 +92,7 @@ if __name__ == '__main__':
 
     data_path = '/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release/AUDIO/'
     lists = '/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release/LISTS/val_fold_1.txt'
-
+    # test_figures()
     """pixel flipping"""
     # pixelFlipping.main_pixel_flipping('loudness', './eval/', data_path, 128, list_files=lists)
-    pixelFlipping.significance("loudness", './eval', data_path, 200, number_runs=5)
+    # pixelFlipping.significance("loudness", './eval', data_path, 200, number_runs=5)

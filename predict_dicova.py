@@ -2,9 +2,16 @@ import librosa
 import numpy as np
 import configparser
 import pickle
+"""file containing the predict functions for the DiCOVA baseline models, adapted from the DiCOVA baseline code"""
 
 
 def compute_mfcc(s, config):
+    """
+    computes the mfcc coefficients of s and their deltas
+    :param s: audio to compute
+    :param config: configuration to use
+    :return: concatenated mfccs and their deltas and ddeltas
+    """
     # computes MFCC of s as defined in the dicova baseline code
     mfcc = librosa.feature.mfcc(s, sr=int(config['default']['sampling_rate']),
                              n_mfcc=int(config['mfcc']['n_mfcc']),
@@ -26,6 +33,11 @@ def compute_mfcc(s, config):
 
 
 def predict(input_audio):
+    """
+    predicts the output score for a batch of audio files
+    :param input_audio: list of audio files to predict
+    :return: np.array(n,1) of scores for input audio
+    """
     # predicts output label for batch_size audios at a time
     # based on dicova baseline code, slightly adapted for audioLIME
     # TODO: adapt paths
@@ -50,6 +62,11 @@ def predict(input_audio):
 
 
 def predict_single_audio(audio_path):
+    """
+    predicts the score of a single audio file
+    :param audio_path: path to audio file
+    :return: float, predicted score
+    """
     # predicts output label
     # based on dicova baseline code, slightly adapted for audioLIME
     # TODO: update paths

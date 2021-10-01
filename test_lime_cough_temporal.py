@@ -4,26 +4,27 @@ import warnings
 import predict_dicova
 import pixelFlipping
 import quantitativeEvaluation
+import soundfile
 
 
 def test_single_file():
-    audio_path = '/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release/AUDIO/iyWdhFuN_cough.flac'
-    predicted_entire = predict_dicova.predict_single_audio(audio_path)
+    filename = 'tejPPvGf_cough.flac'
+    type_sample = 'neg'
+    audio_path = f'/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release/AUDIO/{filename}'
     # TODO: adapt
-    fs = librosa.get_samplerate(audio_path)
-    audio, _ = librosa.load(audio_path, sr=fs)
-    total_components = 7
-    explanation, factorization = quantitativeEvaluation.get_explanation(audio, total_components)
-    factorization.visualize_decomp(save_path='./figures/temporal_decomp.png')
-    """filename = '1_test12344'
-    quantitativeEvaluation.save_mix(explanation, 3, filename, factorization, fs, gen_random=False)
-    path_name = f"./test/{filename[:-5]}_e.wav"
-    prediction_exp = predict_dicova.predict_single_audio(path_name)
-    print(predicted_entire)
-    print(prediction_exp)
-    figure = explanation.as_pyplot_figure()
-    figure.show()
-    figure.savefig('./explanation.png')"""
+    audio, sr = librosa.load(audio_path)
+    print(predict_dicova.predict_single_audio(audio_path))
+    explanation, decomposition = quantitativeEvaluation.get_explanation(audio, total_components=7, sr=sr, decomp_type='temporal', num_samples=200)
+    # decomposition.visualize_decomp(save_path='./figures/loudness_test.png')
+    print("Components", decomposition.get_number_components())
+    for c in [1, 3, 5]:
+        audio, component_indices = explanation.get_exp_components(0, positive_components=True,
+                                                                  negative_components=True,
+                                                                  num_components=c,
+                                                                  return_indices=True)
+        # num components: how many components should model take for explanations
+        path_name_write = f"./sonification/paper/{filename}_{type_sample}_top{c}_temporal.wav"
+        soundfile.write(path_name_write, audio, sr)
 
 
 if __name__ == '__main__':

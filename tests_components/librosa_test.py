@@ -124,10 +124,40 @@ def check_inverse_quality():
     print('done :) ')
 
 
+def test_loudness_spectral():
+    filename = 'AtACyGlV_cough.flac'
+    audio_path = f'/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release/AUDIO/{filename}'
+    audio, sample_rate = librosa.load(audio_path)
+    # spectrogram
+    start = time.time()
+    spectrogram = librosa.feature.melspectrogram(y=audio, sr=sample_rate)
+    temp_components = []
+    indices = [int(0.1 * len(audio)), int(0.3 * len(audio)), int(0.5 * len(audio)), int(0.7 * len(audio))]
+    previous = 0
+    current_index = 0
+    audio_length = np.size(audio)
+    number_indices = np.size(indices)
+    while previous < audio_length and current_index < number_indices:
+        temp_components.append(librosa.feature.melspectrogram(audio[previous:indices[current_index]]))
+        previous = indices[current_index]
+        current_index += 1
+    temp_components.append(librosa.feature.melspectrogram(audio[previous:]))
+    temp = np.array([])
+    index = 0
+    while index < len(temp_components):
+        temp = np.concatenate((temp, temp_components[index]), axis=1)
+        index += 1
+    librosa.display.specshow(librosa.power_to_db(spectrogram), x_axis='time', y_axis='mel')
+    plt.show()
+    librosa.display.specshow(librosa.power_to_db(temp))
+    plt.show()
+
+
 if __name__ == "__main__":
     # test_lime_image()
     # test_audio()
     # test_spectral_decomposition()
     #test_mfcc()
     #compare_inverses()
-    check_inverse_quality()
+    #check_inverse_quality()
+    test_loudness_spectral()
