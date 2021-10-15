@@ -56,8 +56,11 @@ if __name__ == '__main__':
     sys.path.append('/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_baseline')
     warnings.filterwarnings("ignore", message="Trying to unpickle estimator LogisticRegression from version 0.24.1 when using version 0.24.2. This might lead to breaking code or invalid results. Use at your own risk.")
 
+    comp = list(range(7))
+    results = './old_evals/Spectral /fold1/09_16_pixelFlipping_complete'
+    pixelFlipping.evaluate_data(comp, results)
     """test on single file"""
-    test_single_file()
+    # test_single_file()
 
     data_path = './old_evals/Spectral /09_29_pixelflipping'
     comps = list(range(7))

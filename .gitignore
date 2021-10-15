@@ -8,3 +8,5 @@ figures/*
 *.csv
 sonification/*
 cider/*
+eval2/*
+hyperparams/*

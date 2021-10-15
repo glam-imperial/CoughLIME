@@ -105,6 +105,7 @@ class TemporalDecomposition(object):
         indices = np.array(range(self.num_components))
         indices = indices * distance
         indices = np.append(indices, [length_audio])
+        plt.rcParams["figure.figsize"] = (8, 5)
         plt.plot(audio, color='c')
         for line in indices:
             plt.axvline(x=line, color='m')
@@ -118,3 +119,4 @@ class TemporalDecomposition(object):
             plt.savefig(save_path)
         plt.show()
         print("visualized :)")
+        plt.rcParams["figure.figsize"] = plt.rcParamsDefault["figure.figsize"]

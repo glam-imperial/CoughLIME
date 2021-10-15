@@ -66,10 +66,10 @@ def make_graph(comps, values, save_path, plot_dev=False, dev=None, mode='random'
         # need to color the area in between the curves and add the dauc value to the plot
         lbl = f"Delta-Area Under Curve = {round(dauc, 4)}"
         plt.fill_between(comps, values[0, :], values[1, :], color='mediumpurple', alpha=0.5, label=lbl)
-    plt.title("Loudness: averaged percentage of predictions leading\nto same class for k % flipped components")  # TODO: adapt
+    plt.title("Spectral (fold 2): percentage of predictions leading\nto same class for k flipped components")  # TODO: adapt
     plt.xticks(comps)
     ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
-    plt.xlabel("Percentage of flipped components")
+    plt.xlabel("Number of flipped components")
     plt.ylabel("Percentage of same predictions")
     plt.legend()
     plt.savefig(f'{save_path}/summary_plot_average.png')
@@ -183,8 +183,8 @@ def significance_analysis(comps, path, stddev='random', dauc=False):
 
 
 if __name__ == "__main__":
-    components = [0, 0.1, 0.25, 0.5, 0.75, 0.9]  # TODO: adapt
-    path_text_files = '/Users/anne/PycharmProjects/LIME_cough/old_evals/Loudness/09_22_pixel_flipping_5_runs/eval'  # TODO: adapt
-    # make_single_graph(components, path_text_files, dauc=True)  # TODO: adapt
-    significance_analysis(components, path_text_files, stddev='random', dauc=True)
+    components = list(range(7))  # TODO: adapt
+    path_text_files = '/Users/anne/PycharmProjects/LIME_cough/old_evals/Spectral /fold1/09_16_pixelFlipping_complete'  # TODO: adapt
+    make_single_graph(components, path_text_files, dauc=True)  # TODO: adapt
+    # significance_analysis(components, path_text_files, stddev='random', dauc=True)
     print('All done :) ')

@@ -30,7 +30,7 @@ if __name__ == '__main__':
     warnings.filterwarnings("ignore", message="Trying to unpickle estimator LogisticRegression from version 0.24.1 when using version 0.24.2. This might lead to breaking code or invalid results. Use at your own risk.")
 
     """test on single file"""
-    test_single_file()
+    #test_single_file()
 
     """quantitative evaluation as in audiolime"""
     # make folder for results of quantitative analysis
@@ -42,7 +42,8 @@ if __name__ == '__main__':
 
     data_path = '/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release/AUDIO/'
     lists = '/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release/LISTS/val_fold_1.txt'
+    comps = [0, 0.1, 0.25, 0.5, 0.75, 0.9]
     # test_figures()
     """pixel flipping"""
-    # pixelFlipping.main_pixel_flipping('loudness', './eval/', data_path, 128, list_files=lists)
+    pixelFlipping.main_pixel_flipping('ls', './eval/', data_path, 128, comps, None)
     # pixelFlipping.significance("loudness", './eval', data_path, 200, number_runs=5)

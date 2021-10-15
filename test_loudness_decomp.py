@@ -4,9 +4,12 @@ import warnings
 import predict_dicova
 import pixelFlipping
 import quantitativeEvaluation
+sys.path.append("./cider/")
+import predict_cider
 import os
 import csv
 import soundfile
+from pathlib import Path
 
 
 def test_single_file():
@@ -77,10 +80,12 @@ if __name__ == '__main__':
     #test on single file
     # TODO: adapt path
     sys.path.append('/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_baseline')
-    warnings.filterwarnings("ignore", message="Trying to unpickle estimator LogisticRegression from version 0.24.1 when using version 0.24.2. This might lead to breaking code or invalid results. Use at your own risk.")
+    warnings.filterwarnings("ignore", message="Trying to unpickle estimator LogisticRegression from version 0.24.1 "
+                                              "when using version 0.24.2. This might lead to breaking code or invalid "
+                                              "results. Use at your own risk.")
 
     """test on single file"""
-    test_single_file()
+    # test_single_file()
 
     """quantitative evaluation as in audiolime"""
     # make folder for results of quantitative analysis
@@ -89,10 +94,15 @@ if __name__ == '__main__':
     # significance analysis
     # total_runs = 5
     # quantitativeEvaluation.significance_tests(total_runs)
-
+    sr = 24000
     data_path = '/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release/AUDIO/'
-    lists = '/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release/LISTS/val_fold_1.txt'
-    # test_figures()
-    """pixel flipping"""
-    # pixelFlipping.main_pixel_flipping('loudness', './eval/', data_path, 128, list_files=lists)
-    # pixelFlipping.significance("loudness", './eval', data_path, 200, number_runs=5)
+    lists = '/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release' \
+            '/LISTS/val_fold_1.txt'
+    ts = [45, 55, 65, 75, 85, 95]
+    comp = [0, 0.1, 0.25, 0.5, 0.75, 0.9]
+    for t in ts:
+        output = f'./eval2/threshold_{t}/'
+        Path(output).mkdir(parents=True, exist_ok=True)
+        """pixel flipping"""
+        pixelFlipping.main_pixel_flipping('loudness', output, data_path, 10, comp, threshold=t,
+                                          predict_fn=predict_cider.predict, sr=sr, list_files=lists)

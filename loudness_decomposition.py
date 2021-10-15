@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 class LoudnessDecomposition(object):
     """ decomposes the cough audio array according to minima in the power curve"""
-    def __init__(self, audio, fs, threshold=75):
+    def __init__(self, audio, fs, min_length=0, threshold=75):
         """
         Init function
         :param audio: np.array((n,)), audio to be decomposed
@@ -17,6 +17,7 @@ class LoudnessDecomposition(object):
         self.audio = audio
         self.fs = fs
         self.threshold = threshold
+        self.min_length = min_length
         self.decomposition_type = 'loudness'
         # components are stored in (n, 1, num_components)
         self.num_components, self.components, self.indices_components, self.loudness = self.initialize_components()
@@ -113,11 +114,12 @@ class LoudnessDecomposition(object):
             return audio, loudness
         return audio
 
-    def get_loudness_indices(self, min_length=4096):
+    def get_loudness_indices(self):
         """
         calculate the indices of the audio array that correspond to minima below self.threshold of the power array
         :return: indices, loudness power array
         """
+        min_length = self.min_length
         loudness = self.compute_power_db()
         loudness_rounded = np.around(loudness, decimals=-1)
         li = [[k, next(g)[0]] for k, g in itertools.groupby(enumerate(loudness_rounded), key=lambda k: k[1])]

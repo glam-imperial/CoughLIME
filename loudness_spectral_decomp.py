@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from loudness_decomposition import LoudnessDecomposition
 
 
-class LoudnessSpectralDecomposition(LoudnessDecomposition):
+class LoudnessSpectralDecomposition(object):
     def __init__(self, audio, fs, threshold=75, num_spectral=5):
         self.audio = audio
         self.fs = fs
@@ -41,6 +41,30 @@ class LoudnessSpectralDecomposition(LoudnessDecomposition):
                 current_index += 1
             temp_components.append(self.get_spectral_comp(audio[previous:]))
         return temp_components, indices_min, loudness
+
+    def get_loudness_indices(self, min_length=4096):
+        """
+        calculate the indices of the audio array that correspond to minima below self.threshold of the power array
+        :return: indices, loudness power array
+        """
+        loudness = self.compute_power_db()
+        loudness_rounded = np.around(loudness, decimals=-1)
+        li = [[k, next(g)[0]] for k, g in itertools.groupby(enumerate(loudness_rounded), key=lambda k: k[1])]
+        loudness_no_dups = [item[0] for item in li]
+        indices = [item[1] for item in li]
+        # get threshold for loudness to start no components, check minima if they are above the threshold, if so: delete
+        minima = np.array((argrelextrema(np.array(loudness_no_dups), np.less))).flatten()
+        to_delete = []
+        for i, m in enumerate(minima):
+            if loudness[int(indices[int(m)])] > self.threshold:
+                to_delete.append(i)
+            elif (i < (len(minima) - 1)) and (int(indices[int(minima[i+1])]) - int(indices[int(m)]) < min_length):
+                to_delete.append(i)
+        minima = np.delete(minima, to_delete)
+        indices_min = []
+        for k in minima:
+            indices_min.append(int(indices[int(k)]))
+        return indices_min, loudness
 
     def get_spectral_comp(self, audio):
         """

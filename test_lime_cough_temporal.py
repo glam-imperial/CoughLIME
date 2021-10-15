@@ -8,13 +8,13 @@ import soundfile
 
 
 def test_single_file():
-    filename = 'tejPPvGf_cough.flac'
-    type_sample = 'neg'
+    filename = 'BRdoMJMm_cough.flac'
     audio_path = f'/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_Train_Val_Data_Release/AUDIO/{filename}'
     # TODO: adapt
     audio, sr = librosa.load(audio_path)
     print(predict_dicova.predict_single_audio(audio_path))
-    explanation, decomposition = quantitativeEvaluation.get_explanation(audio, total_components=7, sr=sr, decomp_type='temporal', num_samples=200)
+    explanation, decomposition = quantitativeEvaluation.get_explanation(audio, total_components=7, sr=sr, decomp_type='temporal', num_samples=10)
+    decomposition.visualize_decomp(save_path='./figures/MA/temporal_decomp.png')
     # decomposition.visualize_decomp(save_path='./figures/loudness_test.png')
     print("Components", decomposition.get_number_components())
     for c in [1, 3, 5]:
