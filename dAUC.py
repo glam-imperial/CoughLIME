@@ -12,7 +12,7 @@ def extract_data(summary_path):
     lines = summary_file.readlines()
     string_percentage_exp = lines[3]
     string_percentage_rand = lines[4]
-    pattern = r"0\.\d*"  # regex pattern to match the percentage
+    pattern = r"\d\.\d*"  # regex pattern to match the ratio (0.xx - 1.0)
     percentage_rand = re.search(pattern, string_percentage_rand).group()
     percentage_exp = re.search(pattern, string_percentage_exp).group()
     return percentage_exp, percentage_rand
@@ -28,11 +28,11 @@ def calculate_dauc(comps, data_dir):
     morfs = np.zeros(len(comps))
     rands = np.zeros(len(comps))
     for i, c in enumerate(comps):
-        summary_path = f"{data_dir}/{c}_removed_components.txt"  # TODO:adapt
+        summary_path = f"{data_dir}/{c}_removed_components.txt"
         morfs[i], rands[i] = extract_data(summary_path)
     area_morf = calculate_area(morfs, comps)
     area_rand = calculate_area(rands, comps)
-    dauc = abs(area_rand - area_morf)
+    dauc = area_rand - area_morf
     print("Delta Area Under Curve:", dauc)
     return dauc
 
@@ -72,4 +72,4 @@ def main(components, path):
 if __name__ == '__main__':
     # comp = [0, 0.1, 0.25, 0.5, 0.75, 0.9]
     comp = [0, 1, 2, 3, 4, 5, 6]
-    print(calculate_dauc(comp, './old_evals/Temporal/09_13_pixel_flipping_temporal/eval'))  # TODO: adapt
+    print(calculate_dauc(comp, './old_evals/Temporal/09_13_pixel_flipping_temporal/eval'))

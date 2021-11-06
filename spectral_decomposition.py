@@ -10,12 +10,14 @@ class SpectralDecomposition(object):
         """
         Init function
         :param audio: np.array((n,)), audio to be decomposed
+        :param sample_rate: int, sample rate of audio
         :param num_components: int, number of components to be generated
         """
         self.num_components = num_components
         self.audio = audio
         self.sample_rate = sample_rate
         self.decomposition_type = 'spectral'
+        # components are stored in 3d numpy array of shape (num_components, 128, length_spectrogram)
         self.initialize_components()
 
     def get_number_components(self):
@@ -93,24 +95,20 @@ class SpectralDecomposition(object):
         mask = np.zeros(np.shape(self.components[0, :, :]), dtype=np.byte)
         if 128 % self.num_components == 0:
             len_component = 128 / self.num_components
-            for i in range(self.num_components):
-                if i in positive_indices:
-                    mask[(i*len_component+1):((i+1)*len_component-1), 1:-1] = 1
-                elif i in negative_indices:
-                    mask[(i*len_component+1):((i+1)*len_component-1), 1:-1] = -1
         else:
             len_component = int(128 / self.num_components + 1)
-            for i in range(self.num_components - 1):
-                if i in positive_indices:
-                    mask[(i*len_component+1):((i+1)*len_component-1), 1:-1] = 1
-                elif i in negative_indices:
-                    mask[(i*len_component+1):((i+1)*len_component-1), 1:-1] = -1
+
+        for i in range(self.num_components):
+            if i in positive_indices:
+                mask[(i*len_component+1):((i+1)*len_component-1), 1:-1] = 1
+            elif i in negative_indices:
+                mask[(i*len_component+1):((i+1)*len_component-1), 1:-1] = -1
+        if 128 % self.num_components != 0:
             # last component
             if (self.num_components - 1) in positive_indices:
                 mask[((self.num_components-1)*len_component+1):-1, 1:-1] = 1
             elif (self.num_components - 1) in negative_indices:
                 mask[((self.num_components-1)*len_component+1):-1, 1:-1] = -1
-
         return mask
 
     def return_weighted_components(self, used_features, weights):

@@ -15,8 +15,8 @@ class CoughExplanation(object):
     def __init__(self, decomposition):
         """
         init function for Cough Explanation object
-        :param decomposition object: chosen decomposition for the explanation, current possibilities:
-                                loudness, temporal, spectral
+        :param decomposition: object, chosen decomposition for the explanation, possibilities:
+                                temporal, spectral, loudness, ls (loudness-spectral), nmf
         """
 
         self.decomposition = decomposition
@@ -48,7 +48,8 @@ class CoughExplanation(object):
     def get_used_indices(self, label, positive_components=True, negative_components=False, num_components='all',
                          min_abs_weight=0.0):
         """
-        returns the num_components most important components and their indices in an explanation
+        returns the indices of the num_components most important components of the explanation and their weights in the
+        explanation
         :param label: class for which to explain the prediction
         :param positive_components: bool, whether to include components with positive weights
         :param negative_components: bool, whether to include components with negative weights
@@ -95,7 +96,8 @@ class CoughExplanation(object):
         :param num_components: int, how many components to return
         :param min_abs_weight: float, min abs weight that the components needs to have in order to be included in return
         :param return_indices: bool, whether to also return the indices
-        :return: weighted audioof the most important num_components for the explanation, possibly also indices
+        :return: array, weighted audio of the most important num_components for the explanation,
+             possibly also indices as list
         """
         # returns weighted audio (weighted by abs value of components)
         used_features, weights = self.get_used_indices(label, positive_components, negative_components,
@@ -117,7 +119,7 @@ class CoughExplanation(object):
         minimum = min(abs_weights) - 0.2 * max(abs_weights)
         maximum = max(abs_weights) + 0.4 * max(abs_weights)
         normalized = np.zeros(np.shape(abs_weights))
-        for i, w in enumerate(abs_weights):
+        for i, _ in enumerate(abs_weights):
             normalized[i] = (abs_weights[i] - minimum) / (maximum - minimum)  # zi = (xi – min(x)) / (max(x) – min(x))
         return normalized
 
@@ -127,8 +129,8 @@ class CoughExplanation(object):
         """
         generates an image of the decomposition with the most important components highlighted in green and red
         :param label: class for which to explain the prediction
-        :param positive_only: bool, whether to include components with positive weights
-        :param negative_only: bool, whether to include components with negative weights
+        :param positive_only: bool, whether to include only components with positive weights
+        :param negative_only: bool, whether to include only components with negative weights
         :param hide_rest: bool, whether to hide the other components that are not among the most important
         :param num_features: int, how many components to return
         :param min_weight: float, min abs weight that the components needs to have in order to be included in return
@@ -152,14 +154,26 @@ class CoughExplanation(object):
                                 hide_rest=hide_rest, num_features=num_features, min_weight=min_weight, 
                                 save_path=save_path, show_colors=show_colors)
 
+        elif self.decomposition.decomposition_type == 'nmf':
+            self.image_nmf(label, positive_only=positive_only, negative_only=negative_only,
+                           hide_rest=hide_rest, num_features=num_features, min_weight=min_weight,
+                           save_path=save_path, show_colors=show_colors)
+
+        elif self.decomposition.decomposition_type == 'ls':
+            self.image_ls(label, positive_only=positive_only, negative_only=negative_only,
+                          hide_rest=hide_rest, num_features=num_features, min_weight=min_weight,
+                          save_path=save_path, show_colors=show_colors)
+
     def get_indices(self, label, positive_only=True, negative_only=False, hide_rest=True,
-                    num_features=5, min_weight=0.):
-        """ helper function to return image with highlighted most important components
+                    num_features=5, min_weight=0., get_mask=True):
+        """ helper function to return image with highlighted most important components returning the corresponding
+        component indices
         :param label: class for which to explain the prediction
-        :param positive_only: bool, whether to include components with positive weights
-        :param negative_only: bool, whether to include components with negative weights
+        :param positive_only: bool, whether to include only components with positive weights
+        :param negative_only: bool, whether to include only components with negative weights
         :param hide_rest: bool, whether to hide unused features in image
         :param num_features: int, how many components to return
+        :param get_mask: bool, whether to also return the generated mask  for the image (for scikit mark_boundaries)
         :param min_weight: float, min abs weight that the components needs to have in order to be included in return
         :return: indices of components to include, indices of important components (array(k,)), corresponding weights
                         (array(k,)), mask to use to highlight components
@@ -174,7 +188,8 @@ class CoughExplanation(object):
         if negative_only:
             indices_comp = [x[0] for x in explanation if x[1] < 0 and abs(x[1]) > min_weight][:num_features]
             weights = [x[1] for x in explanation if x[1] < 0 and abs(x[1]) > min_weight][:num_features]
-            mask = decomposition.return_mask_boundaries([], indices_comp)
+            if get_mask:
+                mask = decomposition.return_mask_boundaries([], indices_comp)
         if positive_only or negative_only:
             if hide_rest:
                 indices_show = indices_comp
@@ -190,12 +205,16 @@ class CoughExplanation(object):
                     comp_pos.append(x[0])
                 elif x[1] < 0 and np.abs(x[1]) > min_weight:
                     comp_neg.append(x[0])
-            mask = decomposition.return_mask_boundaries(comp_pos, comp_neg)
+            if get_mask:
+                mask = decomposition.return_mask_boundaries(comp_pos, comp_neg)
             if hide_rest:
                 indices_show = comp_pos + comp_neg
             else:
                 indices_show = range(decomposition.get_number_components())
-        return indices_show, indices_comp, mask, weights
+        if get_mask:
+            return indices_show, indices_comp, mask, weights
+        else:
+            return indices_show, indices_comp, weights
 
     def make_masked_image(self, mask):
         """
@@ -224,8 +243,8 @@ class CoughExplanation(object):
         :param positive_only: bool, whether to include components with positive weights
         :param negative_only: bool, whether to include components with negative weights
         :param hide_rest: bool, whether to hide or show less important components
-        :param num_features: int, how many components to return
-        :param min_weight: float, min abs weight that the components needs to have in order to be included in return
+        :param num_features: int, how many components to highlight
+        :param min_weight: float, min abs weight that the components needs to have in order to be highlighted
         :param save_path: if not None: path where to save the generated image
         :param show_colors: bool, whether to highlight the components in green or red or just mark them
         :return: nothing, shows and saves image if save_path is specified
@@ -271,8 +290,8 @@ class CoughExplanation(object):
         :param positive_only: bool, whether to include components with positive weights
         :param negative_only: bool, whether to include components with negative weights
         :param hide_rest: bool, whether to hide or show less important components
-        :param num_features: int, how many components to return
-        :param min_weight: float, min abs weight that the components needs to have in order to be included in return
+        :param num_features: int, how many components to highlight
+        :param min_weight: float, min abs weight that the components needs to have in order to be highlighted
         :param save_path: if not None: path where to save the generated image
         :param show_colors: bool, whether to highlight the components in green or red or just mark them
         :param show_loudness: bool, whether to also show the components in the dB power curve
@@ -339,6 +358,7 @@ class CoughExplanation(object):
         if save_path is not None:
             plt.savefig(save_path)
         plt.show()
+        plt.close()
         
     def image_temporal(self, label, positive_only=True, negative_only=False, hide_rest=False, num_features=3, 
                        min_weight=0.0, save_path=None, show_colors=True):
@@ -348,8 +368,8 @@ class CoughExplanation(object):
         :param positive_only: bool, whether to include components with positive weights
         :param negative_only: bool, whether to include components with negative weights
         :param hide_rest: bool, whether to hide or show less important components
-        :param num_features: int, how many components to return
-        :param min_weight: float, min abs weight that the components needs to have in order to be included in return
+        :param num_features: int, how many components to highlight
+        :param min_weight: float, min abs weight that the components needs to have in order to be highlighted
         :param save_path:  if not None: path where to save the generated image
         :param show_colors: bool, whether to highlight the components in green or red or just mark them
         """
@@ -395,6 +415,122 @@ class CoughExplanation(object):
         if save_path is not None:
             plt.savefig(save_path)
         plt.show()
+        plt.close()
+
+    def image_nmf(self, label, positive_only=False, negative_only=False,
+                  hide_rest=False, num_features=3, min_weight=0.0,
+                  save_path=None, show_colors=True):
+        """
+        generates the image highlighting the num_components most important components for the nmf decomposition
+        :param label: class for which to explain the prediction
+        :param positive_only: bool, whether to include components with positive weights
+        :param negative_only: bool, whether to include components with negative weights
+        :param hide_rest:  bool, whether to hide or show less important components
+        :param num_features: int, how many components to highlight
+        :param min_weight: float, min abs weight that the components needs to have in order to be highlighted
+        :param save_path: if not None: path where to save the generated image
+        :param show_colors: bool, whether to highlight the components in green or red or just mark them
+        """
+        indices_show, indices_comp, weights = self.get_indices(label, positive_only, negative_only, hide_rest,
+                                                               num_features, min_weight, get_mask=False)
+        num_c = self.decomposition.num_components
+        w = self.decomposition.W
+        h = self.decomposition.H
+
+        fig, ax = plt.subplots(1, num_c, figsize=(7, 8))
+        fig.suptitle("NMF Decomposition into 6 Components\nSpectral Profiles")
+        logw = np.log10(w)
+        normalized_weights = self.normalize(weights)
+
+        for i in range(num_c):
+            if i in indices_show:
+                x = list(range(len(-logw[:, i])))
+                ax[i].plot(logw[:, i], x)
+                ax[i].set_xlabel(f"Component {i+1}", rotation=90)
+                if i in indices_comp:
+                    w_i = indices_comp.index(i)
+                    if weights[w_i] > 0:
+                        ax[i].set_facecolor((0.0, 1.0, 0.0, normalized_weights[w_i]))
+                    else:
+                        ax[i].set_facecolor((1.0, 0.0, 0.0, normalized_weights[w_i]))
+        plt.tight_layout()
+
+        if save_path is not None:
+            plt.savefig(f'{save_path}/nmf_spectral.png')
+        plt.show()
+        plt.close()
+        # temporal activations
+
+        fig, ax = plt.subplots(num_c, 1, figsize=(7, 7))
+        fig.suptitle("NMF Decomposition into 6 Components\nTemporal Activations")
+        for i in range(num_c):
+            if i in indices_show:
+                ax[i].plot(h[i])
+                ax[i].set_ylabel(f"Component {i+1}", rotation=90)
+                if i in indices_comp:
+                    w_i = indices_comp.index(i)
+                    if weights[w_i] > 0:
+                        ax[i].set_facecolor((0.0, 1.0, 0.0, normalized_weights[w_i]))
+                    else:
+                        ax[i].set_facecolor((1.0, 0.0, 0.0, normalized_weights[w_i]))
+        plt.tight_layout()
+        if save_path is not None:
+            plt.savefig(f"{save_path}/nmf_temporal.png")
+        plt.show()
+        print("visualized :) ")
+        plt.close()
+
+    def image_ls(self, label, positive_only=False, negative_only=False,
+                 hide_rest=False, num_features=3, min_weight=0.0,
+                 save_path=None, show_colors=True):
+        """
+        generates the image highlighting the num_components most important components for the loudness-spectral
+         decomposition
+        :param label: class for which to explain the prediction
+        :param positive_only: bool, whether to include components with positive weights
+        :param negative_only: bool, whether to include components with negative weights
+        :param hide_rest:  bool, whether to hide or show the other components
+        :param num_features: int, how many components to show
+        :param min_weight: float, min abs weight that the components needs to have in order to be highlighted
+        :param save_path: if not None: path where to save the generated image
+        :param show_colors:bool, whether to highlight the components in green or red or just mark them
+        """
+        image_indices, indices_comp, mask, weights = self.get_indices(label, positive_only=positive_only,
+                                                                      negative_only=negative_only,
+                                                                      hide_rest=hide_rest,
+                                                                      num_features=num_features,
+                                                                      min_weight=min_weight)
+
+        fig, (ax1) = plt.subplots(1)
+
+        mask_s = np.zeros(self.decomposition.num_components).astype(bool)
+        mask_s[image_indices] = True
+        spectrogram = self.decomposition.get_components_mask(mask_s, spec=True)
+
+        spec_db = librosa.power_to_db(spectrogram, ref=np.max)
+
+        marked = mark_boundaries(spec_db, mask)
+        img = ax1.imshow(marked[:, :, 2], origin="lower", cmap=plt.get_cmap("magma"))
+        fig.colorbar(img, ax=ax1)
+        normalized_weights = self.normalize(weights)
+        for index, comp in enumerate(indices_comp):
+            if weights[index] < 0:
+                mask = self.decomposition.return_mask_boundaries([], [comp])
+            else:
+                mask = self.decomposition.return_mask_boundaries([comp], [])
+            image_array = self.make_masked_image(mask)
+            ax1.imshow(image_array, origin="lower", interpolation="nearest", alpha=normalized_weights[index])
+
+        ax1.set_xlabel("Time")
+        ax1.set_ylabel("Frequency")
+        ax1.axes.xaxis.set_ticks([])
+        ax1.axes.yaxis.set_ticks([])
+        fig.suptitle('Spectral-Loudness Decomposition')
+
+        if save_path is not None:
+            plt.savefig(save_path)
+        plt.show()
+        plt.close()
 
 
 class LimeCoughExplainer(object):

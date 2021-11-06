@@ -1,24 +1,25 @@
 from scipy.signal import argrelextrema
 import numpy as np
 import itertools
-import librosa
 import matplotlib.pyplot as plt
 
 
 class LoudnessDecomposition(object):
     """ decomposes the cough audio array according to minima in the power curve"""
-    def __init__(self, audio, fs, threshold=75):
+    def __init__(self, audio, fs, min_length=0, threshold=75):
         """
         Init function
         :param audio: np.array((n,)), audio to be decomposed
         :param fs: int, sample rate
+        :param min_length: int, minimum length for one component
         :param threshold: int, power threshold to generate the components
         """
         self.audio = audio
         self.fs = fs
         self.threshold = threshold
+        self.min_length = min_length
         self.decomposition_type = 'loudness'
-        # components are stored in (n, 1, num_components)
+        # components are stored in list of numpy arrays that hold the individual components
         self.num_components, self.components, self.indices_components, self.loudness = self.initialize_components()
         self.fudged_components = self.initialize_fudged_components()
 
@@ -45,7 +46,6 @@ class LoudnessDecomposition(object):
         audio_length = np.size(audio)
         number_indices = np.size(indices_min)
         if number_indices == 0:
-            print("No minimum detected, initializing one component")
             temp_components.append(audio)
         else:
             while previous < audio_length and current_index < number_indices:
@@ -113,11 +113,12 @@ class LoudnessDecomposition(object):
             return audio, loudness
         return audio
 
-    def get_loudness_indices(self, min_length=4096):
+    def get_loudness_indices(self):
         """
         calculate the indices of the audio array that correspond to minima below self.threshold of the power array
         :return: indices, loudness power array
         """
+        min_length = self.min_length
         loudness = self.compute_power_db()
         loudness_rounded = np.around(loudness, decimals=-1)
         li = [[k, next(g)[0]] for k, g in itertools.groupby(enumerate(loudness_rounded), key=lambda k: k[1])]
@@ -155,16 +156,17 @@ class LoudnessDecomposition(object):
         win_len = round(win_len_sec * self.fs)
         win = np.ones(win_len) / win_len
         power_db = 10 * np.log10(np.convolve(self.audio**2, win, mode='same') / power_ref)
-        power_db[np.where(power_db == -np.inf)] = 0  # accounts for errors in calculation because of division by 0
+        power_db[np.where(power_db == -np.inf)] = 0  # added, errors in calculation because of division by 0
         power_db = np.abs(power_db)
         return power_db
 
     def return_mask_boundaries(self, positive_indices, negative_indices):
         """
         calculates a mask for highlighting selected components in an image
-        :param positive_indices: indices of components with positive weights
-        :param negative_indices: indices of components with negative weights
-        :return: 2d array, set to 1 for components with positive weights and to -1 for negative weights
+        :param positive_indices: indices of components with positive weights to include
+        :param negative_indices: indices of components with negative weights to include
+        :return: 2d array, set to 1 for components with positive weights and to -1 for negative weights, mask to use
+        with scikit.mark_boundaries
         """
         mask = np.zeros(np.shape(self.audio), dtype=np.byte)
         indices = [0] + self.indices_components + [np.size(self.audio)]

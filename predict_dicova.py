@@ -46,48 +46,23 @@ def predict(input_audio):
 
     config = configparser.ConfigParser()
     config.read(this_config)
-    batch_size = len(input_audio)
-    labels = np.zeros((batch_size, 1))
 
     file_model = open(path_model, 'rb')
     rf_model = pickle.load(file_model)
 
-    for i, audio in enumerate(input_audio):
-        mfcc = compute_mfcc(audio, config)
+    if isinstance(input_audio, list) or len(np.shape(input_audio)) > 1:
+        # various files, need loop
+        batch_size = len(input_audio)
+        labels = np.zeros((batch_size, 1))
+        for i, audio in enumerate(input_audio):
+            mfcc = compute_mfcc(audio, config)
 
+            score = rf_model.validate([mfcc.T])
+            score = np.mean(score[0], axis=0)[1]
+            labels[i, 0] = score
+    else:
+        # just predict on single file
+        mfcc = compute_mfcc(input_audio, config)
         score = rf_model.validate([mfcc.T])
-        score = np.mean(score[0], axis=0)[1]
-        labels[i, 0] = score
+        labels = np.mean(score[0], axis=0)[1]
     return labels
-
-
-def predict_single_audio(audio_path):
-    """
-    predicts the score of a single audio file
-    :param audio_path: path to audio file
-    :return: float, predicted score
-    """
-    # predicts output label
-    # based on dicova baseline code, slightly adapted for audioLIME
-    # TODO: update paths
-    this_config = '/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_baseline/conf/feature.conf'
-    path_model = '/Users/anne/Documents/Uni/Robotics/Masterarbeit/MA_Code/DICOVA/DiCOVA_baseline/results_lr/fold_1/model.pkl'
-
-    config = configparser.ConfigParser()
-    config.read(this_config)
-
-    file_model = open(path_model, 'rb')
-    rf_model = pickle.load(file_model)
-
-    # sample_rate = librosa.get_samplerate(audio_path)
-    audio_array, _ = librosa.load(audio_path)
-
-    # this line is the problem why librosa outputs nan
-    if np.max(np.abs(audio_array)) != 0:
-        audio_array = audio_array/np.max(np.abs(audio_array))
-
-    mfcc = compute_mfcc(audio_array, config)
-
-    score = rf_model.validate([mfcc.T])
-    label = np.mean(score[0], axis=0)[1]
-    return label

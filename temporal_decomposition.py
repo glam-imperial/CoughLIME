@@ -69,6 +69,27 @@ class TemporalDecomposition(object):
         audio = self.get_components_mask(mask)
         return audio
 
+    def return_mask_boundaries(self, positive_indices, negative_indices):
+        """
+        calculates a mask for highlighting selected components in an image
+        :param positive_indices: indices of components with positive weights
+        :param negative_indices: indices of components with negative weights
+        :return: 2d array, set to 1 for components with positive weights and to -1 for negative weights
+        """
+        audio = self.audio
+        length_audio = np.shape(audio)[0]
+        distance = int(length_audio/self.num_components)
+        indices = np.array(range(self.num_components))
+        indices = indices * distance
+        indices = np.append(indices, [length_audio])
+        mask = np.zeros(np.shape(self.audio), dtype=np.byte)
+        for i in range(len(indices) - 1):
+            if i in positive_indices:
+                mask[indices[i] + 1:indices[i + 1] - 1] = 1
+            elif i in negative_indices:
+                mask[indices[i] + 1:indices[i + 1] - 1] = -1
+        return mask
+
     def return_weighted_components(self, used_features, weights):
         """
         return audio with temporal components weighted according to their absolute importance
@@ -105,6 +126,7 @@ class TemporalDecomposition(object):
         indices = np.array(range(self.num_components))
         indices = indices * distance
         indices = np.append(indices, [length_audio])
+        plt.rcParams["figure.figsize"] = (8, 5)
         plt.plot(audio, color='c')
         for line in indices:
             plt.axvline(x=line, color='m')
@@ -118,3 +140,5 @@ class TemporalDecomposition(object):
             plt.savefig(save_path)
         plt.show()
         print("visualized :)")
+        plt.rcParams["figure.figsize"] = plt.rcParamsDefault["figure.figsize"]
+        plt.close()
